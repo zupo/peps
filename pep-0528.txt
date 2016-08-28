@@ -1,0 +1,141 @@
+PEP: 528
+Title: SSL module support and scope
+Version: $Revision$
+Last-Modified: $Date$
+Author: Christian Heimes <christian@python.org>
+Status: Active
+Type: Process
+Content-Type: text/x-rst
+Created: 28-Aug-2016
+Post-History:
+
+
+Abstract
+========
+
+This PEP defines rules for supported OpenSSL versions as well as
+compatibility with forks of OpenSSL such as LibreSSL. A formal, written-down
+compatibility specification allows vendors and distributors to plan ahead
+and ensure that their platforms provide the minimum required version of
+OpenSSL.
+
+At the same time this PEP formerly defines the scope and purpose of Python's
+ssl module to stier development and define the feature set of the ssl module.
+It sets design goals and expectation for new features. It gives contributors
+a better understanding whether a feature belongs in Python's standard
+library or should land in a third-party package.
+
+In summary, this PEP aims to reduce the maintenance burden and security of
+the ssl module by limiting its code.
+
+
+Rationale
+=========
+
+The ssl module plays a critical role in Python's eco-system. pip relies on
+the module to provide secure downloads from Python package index (PyPI).
+
+
+Supported version
+=================
+
+full support
+  The library and version is fully supported.
+
+limited support
+  The library and version is mostly supported. Some features may not be
+  available.
+
+unsupported (builds)
+  The library or version is no longer supported. The ssl module should still
+  build and work, though. Compatibility patches may be applied at the
+  discretion of a maintainer.
+
+unsupported
+  The library or version is not or no longer supported and the ssl module does
+  not compile. Compatibility patches are refused.
+
+
+OpenSSL
+-------
+
+Python only supports versions of OpenSSL that are officially supported by
+OpenSSL. Support is dropped on the same day as OpenSSL. You cannot expect that
+the next patch level release of Python will even compile with an unsupported
+version of OpenSSL. Further more Python may add more restrictions on versions.
+At discretion Python may not be compatible with old versions that still
+receive security updates by OpenSSL. In general only the most recent LTS
+branch and the most recent release branch of OpenSSL are supported.
+
+LibreSSL
+--------
+
+The ssl module has limited support for LibreSSL. Some documented features
+are not available with LibreSSL, e.g. environment variables such as
+SSL_CERT_FILE, SSL_CERT_DIR and OPENSSL_CONF. It's purely a limited of
+LibreSSL.
+
+
+BoringSSL
+---------
+
+BoringSSL is not supported.
+
+
+Version matrix
+==============
+
++-----+--------------------+-------------------+----------------------+----------------------+--------------------+
+|     | 0.9.8              | 1.0.0             | 1.0.1 (EOL Dec 2016) | 1.0.2 (EOL Dec 2019) | 1.1 (EOL Apr 2018) |
++=====+====================+===================+======================+======================+====================+
+| 2.7 | no [build 0.9.8zh] | no [build 1.0.0t] | **yes**              | **yes**              | **yes**            |
++-----+--------------------+-------------------+----------------------+----------------------+--------------------+
+| 3.3 | no [build 0.9.8zh] | no [build 1.0.0t] | **yes**              | **yes**              | **yes**            |
++-----+--------------------+-------------------+----------------------+----------------------+--------------------+
+| 3.4 | no [build 0.9.8zh] | no [build 1.0.0t] | **yes**              | **yes**              | **yes**            |
++-----+--------------------+-------------------+----------------------+----------------------+--------------------+
+| 3.5 | no [build 0.9.8zh] | no [build 1.0.0t] | **yes**              | **yes**              | **yes**            |
++-----+--------------------+-------------------+----------------------+----------------------+--------------------+
+| 3.6 | no                 | no                | **yes**              | **yes**              | **yes**            |
++-----+--------------------+-------------------+----------------------+----------------------+--------------------+
+| 3.7 | no                 | no                | no                   | **yes**              | **yes**            |
++-----+--------------------+-------------------+----------------------+----------------------+--------------------+
+
+
+Trust anchors (root CA certificates)
+====================================
+
+Python does not and will not ship with a trust store. The ssl module solely
+relies on the platform and operating systm to provide a trust anchors.
+
+Scope
+=====
+
+The ssl module is **not** a general-purpose TLS library, certificate
+management system or crypto library. The main purpose is client-side TLS/SSL
+support for the standard library, pip and other third-party software.
+Server-side TLS/SSL is a secondary goal.
+
+Resources
+=========
+
+
+References
+==========
+
+
+Copyright
+=========
+
+This document has been placed in the public domain.
+
+
+
+..
+   Local Variables:
+   mode: indented-text
+   indent-tabs-mode: nil
+   sentence-end-double-space: t
+   fill-column: 70
+   coding: utf-8
+   End:
