@@ -148,7 +148,7 @@ are:
    class in the ``ssl`` module.
 
 While it is technically possible to define (2) in terms of (3), for the sake of
-simplicity it is easier to define these as two separate ABCs. Impelementations
+simplicity it is easier to define these as two separate ABCs. Implementations
 are of course free to implement the concrete subclasses however they see fit.
 
 Obviously, (4) doesn't require an abstract base class: instead, it requires a
