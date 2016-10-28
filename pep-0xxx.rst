@@ -171,6 +171,28 @@ The ``Context`` abstract base class has the following class definition::
     ServerNameCallback = Callable[[TLSBufferObject, Optional[str], Context], Any]
 
     class _BaseContext(metaclass=ABCMeta):
+
+        @property
+        @abstractmethod
+        def validate_certificates(self) -> bool:
+            """
+            Whether to validate the TLS certificates. This switch operates at a
+            very broad scope: either validation is enabled, in which case all
+            forms of validation are performed including hostname validation if
+            possible, or validation is disabled, in which case no validation is
+            performed.
+
+            Not all backends support having their certificate validation
+            disabled. If a backend does not support having their certificate
+            validation disabled, attempting to set this property to ``False``
+            will throw a ``TLSError``.
+            """
+
+        @validate_certificates.setter
+        @abstractmethod
+        def validate_certificates(self, val: bool) -> None:
+          pass
+
         @abstractmethod
         def register_certificates(self,
                                   certificates: str,
@@ -668,7 +690,6 @@ ToDo
   define one as part of this PEP? Otherwise, how do I define the types of the
   arguments to ``wrap_buffers``?
 * Do we need ways to control hostname validation?
-* Do we need ways to disable certificate validation altogether?
 * Do we need to support getpeercert? Should we always return DER instead of the
   weird semi-structured thing?
 * How do we load certs from locations on disk? What about HSMs?
