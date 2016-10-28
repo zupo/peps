@@ -144,7 +144,10 @@ are:
 4. Specifying TLS cipher suites. There is currently no code for doing this in
    the standard library: instead, the standard library uses OpenSSL cipher
    suite strings.
-5. Reporting errors to the caller, currently implemented by the `SSLError`_
+5. Specifying application-layer protocols that can be negotiated during the
+   TLS handshake.
+6. Specifying TLS versions.
+7. Reporting errors to the caller, currently implemented by the `SSLError`_
    class in the ``ssl`` module.
 
 While it is technically possible to define (2) in terms of (3), for the sake of
@@ -210,17 +213,17 @@ The ``Context`` abstract base class has the following class definition::
             pass
 
         @abstractmethod
-        def set_inner_protocols(self, protocols: List[str]) -> None:
+        def set_inner_protocols(self, protocols: List[NextProtocol]) -> None:
             """
             Specify which protocols the socket should advertise as supported
             during the TLS handshake. This may be advertised using either or
             both of ALPN or NPN.
 
-            ``protocols`` should be a list of ASCII strings for ALPN tokens,
-            such as ``['h2', 'http/1.1']``, ordered by preference. The
-            selection of the protocol will happen during the handshake, and
-            will use whatever protocol negotiation mechanisms are available and
-            supported by both peers.
+            ``protocols`` should be a list of acceptable protocols in the form
+            of ``NextProtocol`` objects, such as ``[H2, HTTP1]``, ordered by
+            preference. The selection of the protocol will happen during the
+            handshake, and will use whatever protocol negotiation mechanisms
+            are available and supported by both peers.
 
             If the TLS implementation doesn't support protocol negotiation,
             this method will raise ``NotImplementedError``.
@@ -419,7 +422,7 @@ has the following definition::
             pass
 
         @abstractmethod
-        def negotiated_protocol(self) -> Optional[str]:
+        def negotiated_protocol(self) -> Optional[NextProtocol]:
             """
             Returns the protocol that was selected during the TLS handshake.
             This selection may have been made using ALPN, NPN, or some future
@@ -514,7 +517,7 @@ has the following definition::
             pass
 
         @abstractmethod
-        def negotiated_protocol(self) -> Optional[str]:
+        def negotiated_protocol(self) -> Optional[NextProtocol]:
             """
             Returns the protocol that was selected during the TLS handshake.
             This selection may have been made using ALPN, NPN, or some future
@@ -555,6 +558,33 @@ Cipher Suites
 ~~~~~~~~~~~~~
 
 Todo
+
+Protocol Negotiation
+~~~~~~~~~~~~~~~~~~~~
+
+Both NPN and ALPN allow for protocol negotiation as part of the HTTP/2
+handshake. While NPN and ALPN are, at their fundamental level, built on top of
+bytestrings, string-based APIs are frequently problematic as they allow for
+errors in typing that can be hard to detect.
+
+For this reason, this module would define a type that protocol negotiation
+implementations can pass and be passed. This type would wrap a bytestring, but
+allow for aliases for well-known protocols. This allows us to avoid the
+problems inherent in typos for well-known protocols, while allowing the full
+extensibility of the protocol negotiation layer if needed.
+
+::
+
+    NextProtocol = namedtuple('NextProtocol', ['name'])
+
+    H2 = NextProtocol(b'h2')
+    H2C = NextProtocol(b'h2c')
+    HTTP1 = NextProtocol(b'http/1.1')
+    WEBRTC = NextProtocol(b'webrtc')
+    C_WEBRTC = NextProtocol(b'c-webrtc')
+    FTP = NextProtocol(b'ftp')
+    STUN = NextProtocol(b'stun.nat-discovery')
+    TURN = NextProtocol(b'stun.turn')
 
 TLS Versions
 ~~~~~~~~~~~~
