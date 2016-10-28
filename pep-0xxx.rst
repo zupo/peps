@@ -254,6 +254,19 @@ The ``Context`` abstract base class has the following class definition::
             """
             pass
 
+        @abstracmethod
+        def set_version_range(self, lower_bound=None: Optional[TLSVersion],
+                              upper_bound=None: Optional[TLSVersion]) -> None:
+            """
+            Set the minumum and maximum versions of TLS that should be allowed
+            on TLS connections made by this context.
+
+            If present, ``lower_bound`` will set the lowest acceptable TLS
+            version. If present, ``upper_bound`` will set the highest
+            acceptable TLS version. If either argument is ``None``, this will
+            leave that bound unchanged.
+            """
+
         @abstractmethod
         def wrap_socket(self, socket: socket.socket, server_side=False: bool,
                         auto_handshake=True: bool,
@@ -436,6 +449,12 @@ has the following definition::
             """
             pass
 
+        @abstractproperty
+        def negotiated_tls_version(self) -> Optional[TLSVersion]:
+            """
+            The version of TLS that has been negotiated on this connection.
+            """
+
 
 Buffer
 ~~~~~~
@@ -525,11 +544,47 @@ has the following definition::
             """
             pass
 
+        @abstractproperty
+        def negotiated_tls_version(self) -> Optional[TLSVersion]:
+            """
+            The version of TLS that has been negotiated on this connection.
+            """
+
 
 Cipher Suites
 ~~~~~~~~~~~~~
 
 Todo
+
+TLS Versions
+~~~~~~~~~~~~
+
+It is often useful to be able to restrict the versions of TLS you're willing to
+support. There are many security advantages in refusing to use old versions of
+TLS, and some misbehaving servers will mishandle TLS clients advertising
+support for newer versions.
+
+The following enumerated type can be used to gate TLS versions. Forward-looking
+applications should almost never set a maximum TLS version unless they
+absolutely must, as a TLS backend that is newer than the Python that uses it
+may support TLS versions that are not in this enumerated type.
+
+Additionally, this enumerated type defines two additional flags that can always
+be used to request either the lowest or highest TLS version supported by an
+implementation.
+
+::
+
+    class TLSVersion(Enum):
+        MINIMUM_SUPPORTED
+        SSLv2
+        SSLv3
+        TLSv1
+        TLSv1_1
+        TLSv1_2
+        TLSv1_3
+        MAXIMUM_SUPPORTED
+
 
 Errors
 ~~~~~~
@@ -607,7 +662,6 @@ ToDo
 * It's annoying that there's no type signature for fileobj. Do I really have to
   define one as part of this PEP? Otherwise, how do I define the types of the
   arguments to ``wrap_buffers``?
-* Do we need ways to disable specific TLS versions?
 * Do we need ways to control hostname validation?
 * Do we need ways to disable certificate validation altogether?
 * Do we need to support getpeercert? Should we always return DER instead of the
