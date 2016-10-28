@@ -257,7 +257,7 @@ The ``Context`` abstract base class has the following class definition::
             """
             pass
 
-        @abstracmethod
+        @abstractmethod
         def set_version_range(self, lower_bound=None: Optional[TLSVersion],
                               upper_bound=None: Optional[TLSVersion]) -> None:
             """
