@@ -671,7 +671,7 @@ ToDo
 * Do we need ways to disable certificate validation altogether?
 * Do we need to support getpeercert? Should we always return DER instead of the
   weird semi-structured thing?
-* How do we load certs from locations on disk?
+* How do we load certs from locations on disk? What about HSMs?
 * How do we signal to load certs from the OS? What happens if an implementation
   doesn't let you *not* load those certs?
 
