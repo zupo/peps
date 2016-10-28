@@ -200,7 +200,6 @@ The ``Context`` abstract base class has the following class definition::
             argument. It will be ignored if the private key is not encrypted
             and no password is needed.
             """
-            pass
 
         @abstractmethod
         def set_ciphers(self, ciphers: List[Ciphers]) -> None:
@@ -210,7 +209,6 @@ The ``Context`` abstract base class has the following class definition::
             ``Cipher`` registry. If none of the ``ciphers`` provided to this
             object are supported or available, a ``TLSError`` will be raised.
             """
-            pass
 
         @abstractmethod
         def set_inner_protocols(self, protocols: List[NextProtocol]) -> None:
@@ -228,7 +226,6 @@ The ``Context`` abstract base class has the following class definition::
             If the TLS implementation doesn't support protocol negotiation,
             this method will raise ``NotImplementedError``.
             """
-            pass
 
         @abstractmethod
         def set_sni_callback(self, callback: Optional[ServerNameCallback]) -> None:
@@ -255,7 +252,6 @@ The ``Context`` abstract base class has the following class definition::
             specified in this API, but is up to the concrete implementation to
             handle.
             """
-            pass
 
         @abstractmethod
         def set_version_range(self, lower_bound=None: Optional[TLSVersion],
@@ -300,7 +296,6 @@ The ``Context`` abstract base class has the following class definition::
             Specifying ``server_hostname`` will raise a ValueError if
             ``server_side`` is ``True``.
             """
-            pass
 
         @abstractmethod
         def wrap_buffers(self, incoming: Any, outgoing: Any,
@@ -315,7 +310,6 @@ The ``Context`` abstract base class has the following class definition::
             The ``server_side`` and ``server_hostname`` parameters have the
             same meaning as in ``wrap_socket``.
             """
-            pass
 
 
     class ClientContext(metaclass=ABCMeta):
@@ -344,7 +338,6 @@ The ``Context`` abstract base class has the following class definition::
             server to host multiple SSL-based services with distinct
             certificates, quite similarly to HTTP virtual hosts.
             """
-            pass
 
         @abstractmethod
         def wrap_buffers(self, incoming: Any, outgoing: Any,
@@ -358,7 +351,6 @@ The ``Context`` abstract base class has the following class definition::
             The ``server_hostname`` parameter has the same meaning as in
             ``wrap_socket``.
             """
-            pass
 
 
     class ServerContext(metaclass=ABCMeta):
@@ -381,7 +373,6 @@ The ``Context`` abstract base class has the following class definition::
             control over the blocking behavior of the socket I/O involved in
             the handshake.
             """
-            pass
 
         @abstractmethod
         def wrap_buffers(self, incoming: Any, outgoing: Any) -> TLSWrappedBuffer:
@@ -391,7 +382,6 @@ The ``Context`` abstract base class has the following class definition::
             from ``incoming`` and decrypt it, and write encrypted data to
             ``outgoing``.
             """
-            pass
 
 
 Socket
@@ -410,7 +400,6 @@ has the following definition::
             Performs the TLS handshake. Also performs certificate validation
             and hostname verification.
             """
-            pass
 
         @abstractmethod
         def cipher(self) -> Optional[Cipher]:
@@ -419,7 +408,6 @@ has the following definition::
             the connection. If no connection has been negotiated, returns
             ``None``.
             """
-            pass
 
         @abstractmethod
         def negotiated_protocol(self) -> Optional[NextProtocol]:
@@ -433,7 +421,6 @@ has the following definition::
             not support any of the peer's proposed protocols, or if the
             handshake has not happened yet, ``None`` is returned.
             """
-            pass
 
         @property
         @abstractmethod
@@ -441,7 +428,6 @@ has the following definition::
             """
             The ``Context`` object this socket is tied to.
             """
-            pass
 
         @context.setter
         @abstractmethod
@@ -450,7 +436,6 @@ has the following definition::
             Set the value of the ``Context`` object this socket is tied to.
             This operation (changing the context) may not always be supported.
             """
-            pass
 
         @abstractproperty
         def negotiated_tls_version(self) -> Optional[TLSVersion]:
@@ -481,7 +466,6 @@ has the following definition::
             As at any time a re-negotiation is possible, a call to ``read()``
             can also cause write operations.
             """
-            pass
 
         @abstractmethod
         def write(self, buf: Any) -> int:
@@ -497,7 +481,6 @@ has the following definition::
             As at any time a re-negotiation is possible, a call to ``write()``
             can also cause read operations.
             """
-            pass
 
         @abstractmethod
         def do_handshake(self) -> None:
@@ -505,7 +488,6 @@ has the following definition::
             Performs the TLS handshake. Also performs certificate validation
             and hostname verification.
             """
-            pass
 
         @abstractmethod
         def cipher(self) -> Optional[Cipher]:
@@ -514,7 +496,6 @@ has the following definition::
             the connection. If no connection has been negotiated, returns
             ``None``.
             """
-            pass
 
         @abstractmethod
         def negotiated_protocol(self) -> Optional[NextProtocol]:
@@ -528,7 +509,6 @@ has the following definition::
             not support any of the peer's proposed protocols, or if the
             handshake has not happened yet, ``None`` is returned.
             """
-            pass
 
         @property
         @abstractmethod
@@ -536,7 +516,6 @@ has the following definition::
             """
             The ``Context`` object this socket is tied to.
             """
-            pass
 
         @context.setter
         @abstractmethod
@@ -545,7 +524,6 @@ has the following definition::
             Set the value of the ``Context`` object this socket is tied to.
             This operation (changing the context) may not always be supported.
             """
-            pass
 
         @abstractproperty
         def negotiated_tls_version(self) -> Optional[TLSVersion]:
@@ -634,7 +612,6 @@ The definitions of the errors are below::
         Catching this error should be sufficient to catch *all* TLS errors,
         regardless of what backend is used.
         """
-        pass
 
     class WantWriteError(TLSError):
         """
@@ -643,7 +620,6 @@ The definitions of the errors are below::
         operation cannot complete until more data is written to the network,
         or until the output buffer is drained.
         """
-        pass
 
     class WantReadError(TLSError):
         """
@@ -652,7 +628,6 @@ The definitions of the errors are below::
         operation cannot complete until more data is read from the network, or
         until more data is available in the input buffer.
         """
-        pass
 
 Changes to the Standard Library
 ===============================
