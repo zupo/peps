@@ -289,7 +289,7 @@ The ``Context`` abstract base class has the following class definition::
             """
 
 
-    class ClientContext(metaclass=ABCMeta):
+    class ClientContext(_BaseContext):
         @abstractmethod
         def wrap_socket(self, socket: socket.socket,
                         auto_handshake=True: bool,
@@ -330,7 +330,7 @@ The ``Context`` abstract base class has the following class definition::
             """
 
 
-    class ServerContext(metaclass=ABCMeta):
+    class ServerContext(_BaseContext):
         @abstractmethod
         def wrap_socket(self, socket: socket.socket,
                         auto_handshake=True: bool) -> TLSWrappedSocket:
