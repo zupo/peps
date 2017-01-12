@@ -623,8 +623,12 @@ This module would define three base classes for use with error handling. Unlike
 the other classes defined here, these classes are not *abstract*, as they have
 no behaviour. They exist simply to signal certain common behaviours. Backends
 should subclass these exceptions in their own packages, but needn't define any
-behaviour for them. These exceptions should *never* be thrown directly, they
-should always be subclassed.
+behaviour for them.
+
+In general, concrete implementations should subclass these exceptions rather
+than throw them directly. This makes it moderately easier to determine which
+concrete TLS implementation is in use during debugging of unexpected errors.
+However, this is not mandatory.
 
 The definitions of the errors are below::
 
