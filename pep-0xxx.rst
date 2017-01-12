@@ -420,6 +420,14 @@ has the following definition::
             The version of TLS that has been negotiated on this connection.
             """
 
+        @abstractmethod
+        def unwrap(self) -> socket.socket:
+            """
+            Cleanly terminate the TLS connection on this wrapped socket. Once
+            called, this ``TLSWrappedSocket`` can no longer be used to transmit
+            data. Returns the socket that was wrapped with TLS.
+            """
+
 
 Buffer
 ~~~~~~
@@ -506,6 +514,14 @@ has the following definition::
         def negotiated_tls_version(self) -> Optional[TLSVersion]:
             """
             The version of TLS that has been negotiated on this connection.
+            """
+
+        @abstractmethod
+        def shutdown(self) -> None:
+            """
+            Performs a clean TLS shut down. This should generally be used
+            whenever possible to signal to the remote peer that the content is
+            finished.
             """
 
 
