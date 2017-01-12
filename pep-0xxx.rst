@@ -149,6 +149,7 @@ are:
 6. Specifying TLS versions.
 7. Reporting errors to the caller, currently implemented by the `SSLError`_
    class in the ``ssl`` module.
+8. Specifying certificates to load, either as client or server certificates.
 
 While it is technically possible to define (2) in terms of (3), for the sake of
 simplicity it is easier to define these as two separate ABCs. Implementations
@@ -157,6 +158,17 @@ are of course free to implement the concrete subclasses however they see fit.
 Obviously, (4) doesn't require an abstract base class: instead, it requires a
 richer API for configuring supported cipher suites that can be easily updated
 with supported cipher suites for different implementations.
+
+(8) is a thorny problem, becuase in an ideal world the private keys associated
+with these certificates would never end up in-memory in the Python process
+(that is, the TLS library would collaborate with a Hardware Security Module
+(HSM) to provide the private key in such a way that it cannot be extracted from
+process memory). Thus, we need to provide an extensible model of providing
+certificates that allows concrete implementations the ability to provide this
+higher level of security, while also allowing a lower bar for those
+implementations that cannot. This lower bar would be the same as the status
+quo: that is, the certificate may be loaded from an in-memory buffer or from a
+file on disk.
 
 Context
 ~~~~~~~
@@ -195,32 +207,20 @@ The ``Context`` abstract base class has the following class definition::
 
         @abstractmethod
         def register_certificates(self,
-                                  certificates: str,
-                                  key=None: Optional[str],
-                                  password=None: Optional[Callable[[], Union[AnyStr, bytearray]]]) -> None:
+                                  certificates: List[Certificate],
+                                  key: PrivateKey) -> None:
             """
             Loads a certificate, a number of intermediate certificates, and the
             corresponding private key. These certificates will be offered to
             the remote peer during the handshake if required.
 
-            The ``certificates`` argument must be a bytestring containing the
-            PEM-encoded certificates. The first PEM-encoded certificate must be
-            the leaf certificate. All subsequence certificates will be offered
-            as intermediate additional certificates.
+            The ``certificates`` argument must be a list of Certificate objects
+            as detailed below. The first Certificate must be the leaf
+            certificate. All subsequent certificates will be offered as
+            intermediate additional certificates.
 
-            The ``key`` argument, if present, must contain the PEM-encoded
-            private key associated with the leaf certificate. If not present,
-            the private key will be extracted from ``certificates``.
-
-            The ``password`` argument may be a function to call to get the
-            password for decrypting the private key. It will only be called if
-            the private key is encrypted and a password is necessary. It will
-            be called with no arguments, and it should return a string, bytes,
-            or bytearray. If the return value is a string it will be encoded as
-            UTF-8 before using it to decrypt the key. Alternatively a string,
-            bytes, or bytearray value may be supplied directly as the password
-            argument. It will be ignored if the private key is not encrypted
-            and no password is needed.
+            The ``key`` argument must contain the private key associated with
+            the leaf certificate.
             """
 
         @abstractmethod
@@ -625,6 +625,101 @@ The definitions of the errors are below::
         operation cannot complete until more data is read from the network, or
         until more data is available in the input buffer.
         """
+
+
+Certificates
+~~~~~~~~~~~~
+
+This module would define an abstract X509 certificate class. This class would
+have almost no behaviour, as the goal of this module is not to provide all
+possible relevant cryptographic functionality that could be provided by X509
+certificates. Instead, all we need is the ability to signal the source of a
+certificate to a concrete implementation.
+
+For that reason, this certificate implementation defines only constructors. In
+essence, the certificate object in this module could be as abstract as a handle
+that can be used to locate a specific certificate.
+
+Concrete implementations may choose to provide alternative constructors, e.g.
+to load certificates from HSMs. If a common interface emerges for doing this,
+this module may be updated to provide a standard constructor for this use-case
+as well.
+
+    class Certificate(metaclass=ABCMeta):
+        @abstractclassmethod
+        def from_buffer(self, buffer: bytes) -> Certificate:
+            """
+            Creates a Certificate object from a byte buffer. This byte buffer
+            may be either PEM-encoded or DER-encoded. If the buffer is PEM
+            encoded it *must* begin with the standard PEM preamble (a series of
+            dashes followed by the ASCII bytes "BEGIN CERTIFICATE" and another
+            series of dashes). In the absence of that preamble, the
+            implementation may assume that the certificate is DER-encoded
+            instead.
+            """
+
+        @abstractclassmethod
+        def from_file(self, path: Union[pathlib.Path, AnyStr]) -> Certificate:
+            """
+            Creates a Certificate object from a file on disk. This method may
+            be a convenience method that wraps ``open`` and ``from_buffer``,
+            but some TLS implementations may be able to provide more-secure or
+            faster methods of loading certificates that do not involve Python
+            code.
+            """
+
+
+Private Keys
+~~~~~~~~~~~~
+
+This module would define an abstract private key class. Much like the
+Certificate class, this class has almost no behaviour in order to give as much
+freedom as possible to the concrete implementations to treat keys carefully.
+
+This class has all the caveats of the ``Certificate`` class.
+
+    class PrivateKey(metaclass=ABCMeta):
+        @abstractclassmethod
+        def from_buffer(self,
+                        buffer: bytes,
+                        password=None: Optional[Union[Callable[[], Union[AnyStr, bytearray]], AnyStr, bytearray]) -> Certificate:
+            """
+            Creates a PrivateKey object from a byte buffer. This byte buffer
+            may be either PEM-encoded or DER-encoded. If the buffer is PEM
+            encoded it *must* begin with the standard PEM preamble (a series of
+            dashes followed by the ASCII bytes "BEGIN", the key type, and
+            another series of dashes). In the absence of that preamble, the
+            implementation may assume that the certificate is DER-encoded
+            instead.
+
+            The key may additionally be encrypted. If it is, the ``password``
+            argument can be used to decrypt the key. The ``password`` argument
+            may be a function to call to get the password for decrypting the
+            private key. It will only be called if the private key is encrypted
+            and a password is necessary. It will be called with no arguments,
+            and it should return a string, bytes, or bytearray. If the return
+            value is a string it will be encoded as UTF-8 before using it to
+            decrypt the key. Alternatively a string, bytes, or bytearray value
+            may be supplied directly as the password argument. It will be
+            ignored if the private key is not encrypted and no password is
+            needed.
+            """
+
+        @abstractclassmethod
+        def from_file(self,
+                      path: Union[pathlib.Path, bytes, str],
+                      password=None: Optional[Union[Callable[[], Union[AnyStr, bytearray]], AnyStr, bytearray]) -> Certificate:
+            """
+            Creates a PrivateKey object from a file on disk. This method may
+            be a convenience method that wraps ``open`` and ``from_buffer``,
+            but some TLS implementations may be able to provide more-secure or
+            faster methods of loading certificates that do not involve Python
+            code.
+
+            The ``password`` parameter behaves exactly as the equivalent
+            parameter on ``from_buffer``.
+            """
+
 
 Changes to the Standard Library
 ===============================
