@@ -682,7 +682,7 @@ This class has all the caveats of the ``Certificate`` class.
         @abstractclassmethod
         def from_buffer(self,
                         buffer: bytes,
-                        password=None: Optional[Union[Callable[[], Union[AnyStr, bytearray]], AnyStr, bytearray]) -> Certificate:
+                        password=None: Optional[Union[Callable[[], Union[AnyStr, bytearray]], AnyStr, bytearray]) -> PrivateKey:
             """
             Creates a PrivateKey object from a byte buffer. This byte buffer
             may be either PEM-encoded or DER-encoded. If the buffer is PEM
@@ -708,7 +708,7 @@ This class has all the caveats of the ``Certificate`` class.
         @abstractclassmethod
         def from_file(self,
                       path: Union[pathlib.Path, bytes, str],
-                      password=None: Optional[Union[Callable[[], Union[AnyStr, bytearray]], AnyStr, bytearray]) -> Certificate:
+                      password=None: Optional[Union[Callable[[], Union[AnyStr, bytearray]], AnyStr, bytearray]) -> PrivateKey:
             """
             Creates a PrivateKey object from a file on disk. This method may
             be a convenience method that wraps ``open`` and ``from_buffer``,
