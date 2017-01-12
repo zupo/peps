@@ -288,51 +288,6 @@ The ``Context`` abstract base class has the following class definition::
             leave that bound unchanged.
             """
 
-        @abstractmethod
-        def wrap_socket(self, socket: socket.socket, server_side=False: bool,
-                        auto_handshake=True: bool,
-                        server_hostname=None: Optional[str]) -> TLSWrappedSocket:
-            """
-            Wrap an existing Python socket object ``socket`` and return a
-            ``TLSWrappedSocket`` object. ``socket`` must be a ``SOCK_STREAM``
-            socket: all other socket types are unsupported.
-
-            The returned SSL socket is tied to the context, its settings and
-            certificates.
-
-            The parameter ``server_side`` is a boolean which identifies whether
-            server-side or client-side behavior is desired from this socket.
-
-            The parameter ``auto_handshake`` specifies whether to do the SSL
-            handshake automatically after doing a ``socket.connect()``, or
-            whether the application program will call it explicitly, by
-            invoking the ``TLSWrappedSocket.do_handshake()`` method. Calling
-            ``TLSWrappedSocket.do_handshake()`` explicitly gives the program
-            control over the blocking behavior of the socket I/O involved in
-            the handshake.
-
-            On client connections, the optional parameter ``server_hostname``
-            specifies the hostname of the service which we are connecting to.
-            This allows a single server to host multiple SSL-based services
-            with distinct certificates, quite similarly to HTTP virtual hosts.
-            Specifying ``server_hostname`` will raise a ValueError if
-            ``server_side`` is ``True``.
-            """
-
-        @abstractmethod
-        def wrap_buffers(self, incoming: Any, outgoing: Any,
-                         server_side=False: bool,
-                         server_hostname=None: Optional[str]) -> TLSWrappedBuffer:
-            """
-            Wrap a pair of buffer objects (``incoming`` and ``outgoing``) to
-            create an in-memory stream for TLS. The SSL routines will read data
-            from ``incoming`` and decrypt it, and write encrypted data to
-            ``outgoing``.
-
-            The ``server_side`` and ``server_hostname`` parameters have the
-            same meaning as in ``wrap_socket``.
-            """
-
 
     class ClientContext(metaclass=ABCMeta):
         @abstractmethod
