@@ -437,12 +437,13 @@ has the following definition::
 
     class TLSWrappedBuffer(metaclass=ABCMeta):
         @abstractmethod
-        def read(self, len=1024: int, buffer=None: Any) -> Union[bytes, int]:
+        def read(self, amt=None: int) -> bytes:
             """
-            Read up to ``len`` bytes of data from the input buffer and return
-            the result as a ``bytes`` instance. If ``buffer`` is specified,
-            then read into the buffer instead, and return the number of bytes
-            read.
+            Read up to ``amt`` bytes of data from the input buffer and return
+            the result as a ``bytes`` instance. If ``amt`` is ``None``, will
+            attempt to read until either EOF is reached or until further
+            attempts to read would raise either ``WantReadError`` or
+            ``WantWriteError``.
 
             Raise ``WantReadError`` or ``WantWriteError`` if there is
             insufficient data in either the input or output buffer and the
@@ -450,6 +451,24 @@ has the following definition::
 
             As at any time a re-negotiation is possible, a call to ``read()``
             can also cause write operations.
+            """
+
+        @abstractmethod
+        def read_into(self, buffer: Any, amt=None: int) -> int:
+            """
+            Read up to ``amt`` bytes of data from the input buffer into
+            ``buffer``, which must be an object that implements the buffer
+            protocol. Returns the number of bytes read. If ``amt`` is ``None``,
+            will attempt to read until either EOF is reached or until further
+            attempts to read would raise either ``WantReadError`` or
+            ``WantWriteError``, or until the buffer is full.
+
+            Raises ``WantReadError`` or ``WantWriteError`` if there is
+            insufficient data in either the input or output buffer and the
+            operation would have caused data to be written or read.
+
+            As at any time a re-negotiation is possible, a call to
+            ``read_into()`` can also cause write operations.
             """
 
         @abstractmethod
