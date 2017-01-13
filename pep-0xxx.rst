@@ -698,7 +698,7 @@ as well.
 
     class Certificate(metaclass=ABCMeta):
         @abstractclassmethod
-        def from_buffer(self, buffer: bytes) -> Certificate:
+        def from_buffer(cls, buffer: bytes) -> Certificate:
             """
             Creates a Certificate object from a byte buffer. This byte buffer
             may be either PEM-encoded or DER-encoded. If the buffer is PEM
@@ -710,7 +710,7 @@ as well.
             """
 
         @abstractclassmethod
-        def from_file(self, path: Union[pathlib.Path, AnyStr]) -> Certificate:
+        def from_file(cls, path: Union[pathlib.Path, AnyStr]) -> Certificate:
             """
             Creates a Certificate object from a file on disk. This method may
             be a convenience method that wraps ``open`` and ``from_buffer``,
@@ -731,7 +731,7 @@ This class has all the caveats of the ``Certificate`` class.
 
     class PrivateKey(metaclass=ABCMeta):
         @abstractclassmethod
-        def from_buffer(self,
+        def from_buffer(cls,
                         buffer: bytes,
                         password=None: Optional[Union[Callable[[], Union[bytes, bytearray]], bytes, bytearray]) -> PrivateKey:
             """
@@ -755,7 +755,7 @@ This class has all the caveats of the ``Certificate`` class.
             """
 
         @abstractclassmethod
-        def from_file(self,
+        def from_file(cls,
                       path: Union[pathlib.Path, bytes, str],
                       password=None: Optional[Union[Callable[[], Union[bytes, bytearray]], bytes, bytearray]) -> PrivateKey:
             """
