@@ -150,6 +150,8 @@ are:
 7. Reporting errors to the caller, currently implemented by the `SSLError`_
    class in the ``ssl`` module.
 8. Specifying certificates to load, either as client or server certificates.
+9. Specifying which trust database should be used to validate certificates
+   presented by a remote peer.
 
 While it is technically possible to define (2) in terms of (3), for the sake of
 simplicity it is easier to define these as two separate ABCs. Implementations
@@ -169,6 +171,16 @@ higher level of security, while also allowing a lower bar for those
 implementations that cannot. This lower bar would be the same as the status
 quo: that is, the certificate may be loaded from an in-memory buffer or from a
 file on disk.
+
+(9) also represents an issue because different TLS implementations vary wildly
+in how they allow users to select trust stores. Some implementations have
+specific trust store formats that only they can use (such as the OpenSSL CA
+directory format that is created by ``c_rehash``), and others may not allow you
+to specify a trust store that does not include their default trust store.
+
+For this reason, we need to provide a model that assumes very little about the
+form that trust stores take. The "Trust Store" section below goes into more
+detail about how this is achieved.
 
 Context
 ~~~~~~~
@@ -263,6 +275,13 @@ The ``Context`` abstract base class has the following class definition::
             version. If present, ``upper_bound`` will set the highest
             acceptable TLS version. If either argument is ``None``, this will
             leave that bound unchanged.
+            """
+
+        @abstractmethod
+        def use_trust_store(self, store: TrustStore) -> None:
+            """
+            Configures the Context to use a given trust store to validate
+            certificates. If not called, the default trust store will be used.
             """
 
 
@@ -748,6 +767,40 @@ This class has all the caveats of the ``Certificate`` class.
 
             The ``password`` parameter behaves exactly as the equivalent
             parameter on ``from_buffer``.
+            """
+
+
+Trust Store
+~~~~~~~~~~~
+
+As discussed above, loading a trust store represents an issue because different
+TLS implementations vary wildly in how they allow users to select trust stores.
+For this reason, we need to provide a model that assumes very little about the
+form that trust stores take.
+
+This problem is the same as the one that the Certificate and PrivateKey types
+need to solve. For this reason, we use the exact same model, by creating an
+opaque type that can encapsulate the various means that TLS backends may open
+a trust store.
+
+A given TLS implementation is not required to implement all of the
+constructors. However, it is strongly recommended that a given TLS
+implementation provide the ``system`` constructor if at all possible, as this
+is the most common validation trust store that is used. Concrete
+implementations may also add their own constructors.
+
+    class TrustStore(metaclass=ABCMeta):
+        @abstractclassmethod
+        def system(cls) -> TrustStore:
+            """
+            Returns a TrustStore object that represents the system trust
+            database.
+            """
+
+        @abstractclassmethod
+        def from_pem_file(cls, path: Union[pathlib.Path, bytes, str]) -> TrustStore:
+            """
+            Initializes a trust store from a single file full of PEMs.
             """
 
 
