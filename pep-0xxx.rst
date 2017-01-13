@@ -253,32 +253,6 @@ The ``Context`` abstract base class has the following class definition::
             """
 
         @abstractmethod
-        def set_sni_callback(self, callback: Optional[ServerNameCallback]) -> None:
-            """
-            Register a callback function that will be called after the TLS
-            Client Hello handshake message has been received by the TLS server
-            when the TLS client specifies a server name indication.
-
-            Only one callback can be set per ``Context``. If ``callback`` is
-            ``None`` then the callback is disabled. Calling this function a
-            subsequent time will disable the previously registered callback.
-
-            The ``callback`` function will be called with three arguments: the
-            first will be the ``TLSBufferObject`` for the connection; the
-            second will be a string that represents the server name that the
-            client is intending to communicate (or ``None`` if the TLS Client
-            Hello does not contain a server name); and the third argument will
-            be the original ``Context``. The server name argument will be the
-            IDNA *decoded* server name.
-
-            The ``callback`` must return ``None`` to allow negotiation to
-            continue. Other return values signal errors. Attempting to control
-            what error is signaled by the underlying TLS implementation is not
-            specified in this API, but is up to the concrete implementation to
-            handle.
-            """
-
-        @abstractmethod
         def set_version_range(self, lower_bound=None: Optional[TLSVersion],
                               upper_bound=None: Optional[TLSVersion]) -> None:
             """
@@ -361,6 +335,32 @@ The ``Context`` abstract base class has the following class definition::
             create an in-memory stream for TLS. The SSL routines will read data
             from ``incoming`` and decrypt it, and write encrypted data to
             ``outgoing``.
+            """
+
+        @abstractmethod
+        def set_sni_callback(self, callback: Optional[ServerNameCallback]) -> None:
+            """
+            Register a callback function that will be called after the TLS
+            Client Hello handshake message has been received by the TLS server
+            when the TLS client specifies a server name indication.
+
+            Only one callback can be set per ``Context``. If ``callback`` is
+            ``None`` then the callback is disabled. Calling this function a
+            subsequent time will disable the previously registered callback.
+
+            The ``callback`` function will be called with three arguments: the
+            first will be the ``TLSBufferObject`` for the connection; the
+            second will be a string that represents the server name that the
+            client is intending to communicate (or ``None`` if the TLS Client
+            Hello does not contain a server name); and the third argument will
+            be the original ``Context``. The server name argument will be the
+            IDNA *decoded* server name.
+
+            The ``callback`` must return ``None`` to allow negotiation to
+            continue. Other return values signal errors. Attempting to control
+            what error is signaled by the underlying TLS implementation is not
+            specified in this API, but is up to the concrete implementation to
+            handle.
             """
 
 
