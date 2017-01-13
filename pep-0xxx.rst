@@ -701,7 +701,7 @@ This class has all the caveats of the ``Certificate`` class.
         @abstractclassmethod
         def from_buffer(self,
                         buffer: bytes,
-                        password=None: Optional[Union[Callable[[], Union[AnyStr, bytearray]], AnyStr, bytearray]) -> PrivateKey:
+                        password=None: Optional[Union[Callable[[], Union[bytes, bytearray]], bytes, bytearray]) -> PrivateKey:
             """
             Creates a PrivateKey object from a byte buffer. This byte buffer
             may be either PEM-encoded or DER-encoded. If the buffer is PEM
@@ -716,18 +716,16 @@ This class has all the caveats of the ``Certificate`` class.
             may be a function to call to get the password for decrypting the
             private key. It will only be called if the private key is encrypted
             and a password is necessary. It will be called with no arguments,
-            and it should return a string, bytes, or bytearray. If the return
-            value is a string it will be encoded as UTF-8 before using it to
-            decrypt the key. Alternatively a string, bytes, or bytearray value
-            may be supplied directly as the password argument. It will be
-            ignored if the private key is not encrypted and no password is
-            needed.
+            and it should return either bytes or bytearray containing the
+            password. Alternatively a bytes, or bytearray value may be supplied
+            directly as the password argument. It will be ignored if the
+            private key is not encrypted and no password is needed.
             """
 
         @abstractclassmethod
         def from_file(self,
                       path: Union[pathlib.Path, bytes, str],
-                      password=None: Optional[Union[Callable[[], Union[AnyStr, bytearray]], AnyStr, bytearray]) -> PrivateKey:
+                      password=None: Optional[Union[Callable[[], Union[bytes, bytearray]], bytes, bytearray]) -> PrivateKey:
             """
             Creates a PrivateKey object from a file on disk. This method may
             be a convenience method that wraps ``open`` and ``from_buffer``,
