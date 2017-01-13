@@ -233,17 +233,20 @@ The ``Context`` abstract base class has the following class definition::
             """
 
         @abstractmethod
-        def set_inner_protocols(self, protocols: List[NextProtocol]) -> None:
+        def set_inner_protocols(self, protocols: List[Union[NextProtocol, bytes]]) -> None:
             """
             Specify which protocols the socket should advertise as supported
             during the TLS handshake. This may be advertised using either or
             both of ALPN or NPN.
 
             ``protocols`` should be a list of acceptable protocols in the form
-            of ``NextProtocol`` objects, such as ``[H2, HTTP1]``, ordered by
-            preference. The selection of the protocol will happen during the
-            handshake, and will use whatever protocol negotiation mechanisms
-            are available and supported by both peers.
+            of ``NextProtocol`` objects, such as
+            ``[NextProtocol.H2, NextProtocol.HTTP1]``, ordered by preference.
+            The selection of the protocol will happen during the handshake,
+            and will use whatever protocol negotiation mechanisms are available
+            and supported by both peers. If the ``NextProtocol`` enum doesn't
+            contain a value for the protocol you'd like to negotiate, a byte
+            string can also be passed directly instead.
 
             If the TLS implementation doesn't support protocol negotiation,
             this method will raise ``NotImplementedError``.
@@ -387,11 +390,16 @@ has the following definition::
             """
 
         @abstractmethod
-        def negotiated_protocol(self) -> Optional[NextProtocol]:
+        def negotiated_protocol(self) -> Optional[Union[NextProtocol, bytes]]:
             """
             Returns the protocol that was selected during the TLS handshake.
             This selection may have been made using ALPN, NPN, or some future
             negotiation mechanism.
+
+            If the negotiated protocol is one of the protocols defined in the
+            ``NextProtocol`` enum, the value from that enum will be returned.
+            Otherwise, the raw bytestring of the negotiated protocol will be
+            returned.
 
             If ``Context.set_inner_protocols()`` was not called, if the other
             party does not support protocol negotiation, if this socket does
@@ -502,11 +510,16 @@ has the following definition::
             """
 
         @abstractmethod
-        def negotiated_protocol(self) -> Optional[NextProtocol]:
+        def negotiated_protocol(self) -> Optional[Union[NextProtocol, bytes]]:
             """
             Returns the protocol that was selected during the TLS handshake.
             This selection may have been made using ALPN, NPN, or some future
             negotiation mechanism.
+
+            If the negotiated protocol is one of the protocols defined in the
+            ``NextProtocol`` enum, the value from that enum will be returned.
+            Otherwise, the raw bytestring of the negotiated protocol will be
+            returned.
 
             If ``Context.set_inner_protocols()`` was not called, if the other
             party does not support protocol negotiation, if this socket does
@@ -558,23 +571,23 @@ bytestrings, string-based APIs are frequently problematic as they allow for
 errors in typing that can be hard to detect.
 
 For this reason, this module would define a type that protocol negotiation
-implementations can pass and be passed. This type would wrap a bytestring, but
+implementations can pass and be passed. This type would wrap a bytestring to
 allow for aliases for well-known protocols. This allows us to avoid the
 problems inherent in typos for well-known protocols, while allowing the full
-extensibility of the protocol negotiation layer if needed.
+extensibility of the protocol negotiation layer if needed by letting users pass
+byte strings directly.
 
 ::
 
-    NextProtocol = namedtuple('NextProtocol', ['name'])
-
-    H2 = NextProtocol(b'h2')
-    H2C = NextProtocol(b'h2c')
-    HTTP1 = NextProtocol(b'http/1.1')
-    WEBRTC = NextProtocol(b'webrtc')
-    C_WEBRTC = NextProtocol(b'c-webrtc')
-    FTP = NextProtocol(b'ftp')
-    STUN = NextProtocol(b'stun.nat-discovery')
-    TURN = NextProtocol(b'stun.turn')
+    class NextProtocol(Enum):
+        H2 = b'h2'
+        H2C = b'h2c'
+        HTTP1 = b'http/1.1'
+        WEBRTC = b'webrtc'
+        C_WEBRTC = b'c-webrtc'
+        FTP = b'ftp'
+        STUN = b'stun.nat-discovery'
+        TURN = b'stun.turn'
 
 TLS Versions
 ~~~~~~~~~~~~
