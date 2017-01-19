@@ -236,12 +236,13 @@ The ``Context`` abstract base class has the following class definition::
             """
 
         @abstractmethod
-        def set_ciphers(self, ciphers: List[Ciphers]) -> None:
+        def set_ciphers(self, ciphers: List[CipherSuite]) -> None:
             """
             Set the available ciphers for TLS connections created with this
             context. ``ciphers`` should be a list of ciphers from the
-            ``Cipher`` registry. If none of the ``ciphers`` provided to this
-            object are supported or available, a ``TLSError`` will be raised.
+            ``CipherSuite`` registry. If none of the ``ciphers`` provided to
+            this object are supported or available, a ``TLSError`` will be
+            raised.
             """
 
         @abstractmethod
@@ -401,11 +402,11 @@ has the following definition::
             """
 
         @abstractmethod
-        def cipher(self) -> Optional[Cipher]:
+        def cipher(self) -> Optional[CipherSuite]:
             """
-            Returns the Cipher entry for the cipher that has been negotiated on
-            the connection. If no connection has been negotiated, returns
-            ``None``.
+            Returns the CipherSuite entry for the cipher that has been
+            negotiated on the connection. If no connection has been negotiated,
+            returns ``None``.
             """
 
         @abstractmethod
@@ -521,11 +522,11 @@ has the following definition::
             """
 
         @abstractmethod
-        def cipher(self) -> Optional[Cipher]:
+        def cipher(self) -> Optional[CipherSuite]:
             """
-            Returns the Cipher entry for the cipher that has been negotiated on
-            the connection. If no connection has been negotiated, returns
-            ``None``.
+            Returns the CipherSuite entry for the cipher that has been
+            negotiated on the connection. If no connection has been negotiated,
+            returns ``None``.
             """
 
         @abstractmethod
@@ -579,7 +580,149 @@ has the following definition::
 Cipher Suites
 ~~~~~~~~~~~~~
 
-Todo
+Supporting cipher suites in a truly library-agnostic fashion is a remarkably
+difficult undertaking. Different TLS implementations often have *radically*
+different APIs for specifying cipher suites, but more problematically these
+APIs frequently differ in capability as well as in style. Some examples are
+shown below:
+
+OpenSSL
+^^^^^^^
+
+OpenSSL uses a well-known cipher string format. This format has been adopted as
+a configuration language by most products that use OpenSSL, including Python.
+This format is relatively easy to read, but has a number of downsides: it is
+a string, which makes it remarkably easy to provide bad inputs; it lacks much
+detailed validation, meaning that it is possible to configure OpenSSL in a way
+that doesn't allow it to negotiate any cipher at all; and it allows specifying
+cipher suites in a number of different ways that make it tricky to parse. The
+biggest problem with this format is that there is no formal specification for
+it, meaning that the only way to parse a given string the way OpenSSL would is
+to get OpenSSL to parse it.
+
+OpenSSL's cipher strings can look like this:
+
+    'ECDH+AESGCM:ECDH+CHACHA20:DH+AESGCM:DH+CHACHA20:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:RSA+AESGCM:RSA+AES:!aNULL:!eNULL:!MD5'
+
+This string demonstrates some of the complexity of the OpenSSL format. For
+example, it is possible for one entry to specify multiple cipher suites: the
+entry ``ECDH+AESGCM`` means "all ciphers suites that include both
+elliptic-curve Diffie-Hellman key exchange and AES in Galois Counter Mode".
+More explicitly, that will expand to four cipher suites:
+
+    "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256"
+
+That makes parsing a complete OpenSSL cipher string extremely tricky. Add to
+the fact that there are other meta-characters, such as "!" (exclude all cipher
+suites that match this criterion, even if they would otherwise be included:
+"!MD5" means that no cipher suites using the MD5 hash algorithm should be
+included), "-" (exclude matching ciphers if they were already included, but
+allow them to be re-added later if they get included again), and "+" (include
+the matching ciphers, but place them at the end of the list), and you get an
+*extremely* complex format to parse. On top of this complexity it should be
+noted that the actual result depends on the OpenSSL version, as an OpenSSL
+cipher string is valid so long as it contains at least one cipher that OpenSSL
+recognises.
+
+OpenSSL also uses different names for its ciphers than the names used in the
+relevant specifications. See the manual page for ``ciphers(1)`` for more
+details.
+
+The actual API inside OpenSSL for the cipher string is simple:
+
+    char *cipher_list = <some cipher list>;
+    int rc = SSL_CTX_set_cipher_list(context, cipher_list);
+
+This means that any format that is used by this module must be able to be
+converted to an OpenSSL cipher string for use with OpenSSL.
+
+SecureTransport
+^^^^^^^^^^^^^^^
+
+SecureTransport is the macOS system TLS library. This library is substantially
+more restricted than OpenSSL in many ways, as it has a much more restricted
+class of users. One of these substantial restrictions is in controlling
+supported cipher suites.
+
+Ciphers in SecureTransport are represented by a C ``enum``. This enum has one
+entry per cipher suite, with no aggregate entries, meaning that it is not
+possible to reproduce the meaning of an OpenSSL cipher string like
+"ECDH+AESGCM" without hand-coding which categories each enum member falls into.
+
+However, the names of most of the enum members are in line with the formal
+names of the cipher suites: that is, the cipher suite that OpenSSL calls
+"ECDHE-ECDSA-AES256-GCM-SHA384" is called
+"TLS_ECDHE_ECDHSA_WITH_AES_256_GCM_SHA384" in SecureTransport.
+
+The API for configuring cipher suites inside SecureTransport is simple:
+
+    SSLCipherSuite ciphers[] = {TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384, ...};
+    OSStatus status = SSLSetEnabledCiphers(context, ciphers, sizeof(cphers));
+
+SChannel
+^^^^^^^^
+
+SChannel is the Windows system TLS library.
+
+SChannel specifies cipher suites not by using symbolic constants but by using
+textual names for the cipher suites (the type used in the API is ``LPWSTR``,
+which is a Windows typedef for a pointer to a null-terminated string of
+16-bit unicode characters). The list of supported cipher suites is provided in
+`MSDN articles`_, and can be dynamically found at runtime by using the
+``BCryptEnumContextFunctions`` function appropriately.
+
+Much like SecureTransport, the names of the cipher suites are generally in-line
+with the formal names of the cipher suites, rather than using OpenSSL-specific
+naming conventions. There is one key difference: older versions of Windows
+may append an elliptic-curve to the end of cipher suite names that require the
+use of Elliptic-Curve Cryptography: for example,
+"TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384_P256". This restriction was lifted in
+Windows 10, but support of older Windows versions would require supporting this
+wrinkle.
+
+SChannel does not provide an API that can do a one-shot replacement of all
+cipher suites. Instead, the existing ones need to be removed, and then the new
+list needs to be inserted in order. This code is sufficiently complex that
+carrying a code example is beyond the scope of this PEP: instead, it should be
+noted that each cipher suite is removed and inserted individually, rather than
+using some kind of bulk API as SecureTransport and OpenSSL do.
+
+Proposed Interface
+^^^^^^^^^^^^^^^^^^
+
+The proposed interface for the new module is influenced by the combined set of
+limitations of the above implementations. Specifically, as every implementation
+*except* OpenSSL requires that each individual cipher be provided, there is no
+option but to provide that lowest-common denominator approach.
+
+The simplest approach is to provide an enumerated type that includes all of the
+cipher suites defined for TLS. The values of the enum members will be their
+two-octet cipher identifier as used in the TLS handshake, stored as a tuple of
+integers. The names of the enum members will be their IANA-registered cipher
+suite names.
+
+Rather than populate this enum by hand, it is likely that we'll define a
+script that can build it from Christian Heimes' `tlsdb JSON file`_ (warning:
+large file). This also opens up the possibility of extending the API with
+additional querying function, such as determining which TLS versions support
+which ciphers, if that functionality is found to be useful or necessary.
+
+If users find this approach to be onerous, a future extension to this API can
+provide helpers that can reintroduce OpenSSL's aggregation functionality.
+
+Because this enum would be enormous, the entire enum is not provided here.
+Instead, a small sample of entries is provided to give a flavor of how it will
+appear.
+
+    class CipherSuite(Enum):
+        ...
+        TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA = (0xC0, 0x12)
+        ...
+        TLS_ECDHE_ECDSA_WITH_AES_128_CCM = (0xC0, 0xAC)
+        ...
+        TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256 = (0xC0, 0x2B)
+        ...
+
 
 Protocol Negotiation
 ~~~~~~~~~~~~~~~~~~~~
@@ -861,6 +1004,8 @@ References
 .. _SSLSocket: https://docs.python.org/3/library/ssl.html#ssl.SSLSocket
 .. _SSLObject: https://docs.python.org/3/library/ssl.html#ssl.SSLObject
 .. _SSLError: https://docs.python.org/3/library/ssl.html#ssl.SSLError
+.. _MSDN articles: https://msdn.microsoft.com/en-us/library/windows/desktop/mt490158(v=vs.85).aspx
+.. _tlsdb JSON file: https://github.com/tiran/tlsdb/blob/master/tlsdb.json
 
 
 Copyright
