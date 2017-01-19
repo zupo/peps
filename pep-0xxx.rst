@@ -141,27 +141,29 @@ are:
 3. Providing an in-memory buffer for doing in-memory encryption or decryption
    with no actual I/O (necessary for asynchronous I/O models), currently
    implemented by the `SSLObject`_ class in the ``ssl`` module.
-4. Specifying TLS cipher suites. There is currently no code for doing this in
+4. Applying TLS configuration to the wrapping objects in (2) and (3). Currently
+   this is also implemented by the `SSLContext`_ class in the ``ssl`` module.
+5. Specifying TLS cipher suites. There is currently no code for doing this in
    the standard library: instead, the standard library uses OpenSSL cipher
    suite strings.
-5. Specifying application-layer protocols that can be negotiated during the
+6. Specifying application-layer protocols that can be negotiated during the
    TLS handshake.
-6. Specifying TLS versions.
-7. Reporting errors to the caller, currently implemented by the `SSLError`_
+7. Specifying TLS versions.
+8. Reporting errors to the caller, currently implemented by the `SSLError`_
    class in the ``ssl`` module.
-8. Specifying certificates to load, either as client or server certificates.
-9. Specifying which trust database should be used to validate certificates
-   presented by a remote peer.
+9. Specifying certificates to load, either as client or server certificates.
+10. Specifying which trust database should be used to validate certificates
+    presented by a remote peer.
 
 While it is technically possible to define (2) in terms of (3), for the sake of
 simplicity it is easier to define these as two separate ABCs. Implementations
 are of course free to implement the concrete subclasses however they see fit.
 
-Obviously, (4) doesn't require an abstract base class: instead, it requires a
+Obviously, (5) doesn't require an abstract base class: instead, it requires a
 richer API for configuring supported cipher suites that can be easily updated
 with supported cipher suites for different implementations.
 
-(8) is a thorny problem, becuase in an ideal world the private keys associated
+(9) is a thorny problem, becuase in an ideal world the private keys associated
 with these certificates would never end up in-memory in the Python process
 (that is, the TLS library would collaborate with a Hardware Security Module
 (HSM) to provide the private key in such a way that it cannot be extracted from
@@ -172,7 +174,7 @@ implementations that cannot. This lower bar would be the same as the status
 quo: that is, the certificate may be loaded from an in-memory buffer or from a
 file on disk.
 
-(9) also represents an issue because different TLS implementations vary wildly
+(10) also represents an issue because different TLS implementations vary wildly
 in how they allow users to select trust stores. Some implementations have
 specific trust store formats that only they can use (such as the OpenSSL CA
 directory format that is created by ``c_rehash``), and others may not allow you
@@ -182,22 +184,64 @@ For this reason, we need to provide a model that assumes very little about the
 form that trust stores take. The "Trust Store" section below goes into more
 detail about how this is achieved.
 
-Context
-~~~~~~~
+Finally, this API will split the responsibilities currently assumed by the
+`SSLContext`_ object: specifically, the responsibility for holding and managing
+configuration and the responsibility for using that configuration to build
+wrapper objects.
 
-The ``Context`` abstract base class defines an object that allows configuration
-of TLS. It can be thought of as a factory for ``TLSWrappedSocket`` and
-``TLSWrappedBuffer`` objects.
+This is necessarily primarily for supporting functionality like Server Name
+Indication (SNI). In OpenSSL (and thus in the ``ssl`` module), the server has
+the ability to modify the TLS configuration in response to the client telling
+the server what hostname it is trying to reach. This is mostly used to change
+certificate chain so as to present the correct TLS certificate chain for the
+given hostname. The specific mechanism by which this is done is by returning
+a new `SSLContext`_ object with the appropriate configuration.
 
-The ``Context`` abstract base class has the following class definition::
+This is not a model that maps well to other TLS implementations. Instead, we
+need to make it possible to provide a return value from the SNI callback that
+can be used to indicate what configuration changes should be made. This means
+providing an object that can hold TLS configuration. This object needs to be
+applied to specific TLSWrappedBuffer, and TLSWrappedSocket objects.
 
-    TLSBufferObject = Union[TLSWrappedSocket, TLSWrappedBuffer]
+For this reason, we split the responsibility of `SSLContext`_ into two separate
+objects. The ``TLSConfiguration`` object is an object that acts as container
+for TLS configuration: the ``ClientContext`` and ``ServerContext`` objects are
+objects that are instantiated with a ``TLSConfiguration`` object. Both objects
+would be immutable.
+
+Configuration
+~~~~~~~~~~~~~
+
+The ``TLSConfiguration`` concrete class defines an object that can hold and
+manage TLS configuration. The goals of this class are as follows:
+
+1. To provide a method of specifying TLS configuration that avoids the risk of
+   errors in typing (this excludes the use of a simple dictionary).
+2. To provide an object that can be safely compared to other configuration
+   objects to detect changes in TLS configuration, for use with the SNI
+   callback.
+
+This class is not an ABC, primarily because it is not expected to have
+implementation-specific behaviour. The responsibility for transforming a
+``TLSConfiguration`` object into a useful set of configuration for a given TLS
+implementation belongs to the Context objects discussed below.
+
+This class has one other notable property: it is immutable. This is a desirable
+trait for a few reasons. The most important one is that it allows these objects
+to be used as dictionary keys, which is potentially extremely valuable for
+certain TLS backends and their SNI configuration. On top of this, it frees
+implementations from needing to worry about their configuration objects being
+changed under their feet, which allows them to avoid needing to carefully
+synchronize changes between their concrete data structures and the
+configuration object.
+
+The ``TLSConfiguration`` object would be defined by the following code:
+
     ServerNameCallback = Callable[[TLSBufferObject, Optional[str], Context], Any]
 
-    class _BaseContext(metaclass=ABCMeta):
 
+    class TLSConfiguration:
         @property
-        @abstractmethod
         def validate_certificates(self) -> bool:
             """
             Whether to validate the TLS certificates. This switch operates at a
@@ -209,80 +253,103 @@ The ``Context`` abstract base class has the following class definition::
             Not all backends support having their certificate validation
             disabled. If a backend does not support having their certificate
             validation disabled, attempting to set this property to ``False``
-            will throw a ``TLSError``.
+            will throw a ``TLSError`` when this object is passed into a
+            context object.
             """
 
-        @validate_certificates.setter
+        @property
+        def certificate_chain(self) -> Tuple[List[Certificate], PrivateKey]:
+            """
+            The certificate, intermediate certificate, and the corresponding
+            private key for the leaf certificate. These certificates will be
+            offered to the remote peer during the handshake if required.
+
+            The first Certificate in the list must be the leaf certificate. All
+            subsequent certificates will be offered as intermediate additional
+            certificates.
+            """
+
+        @property
+        def ciphers(self) -> List[CipherSuite]:
+            """
+            The available ciphers for TLS connections created with this
+            configuration, in priority order.
+            """
+
+        @property
+        def inner_protocols(self) -> List[Union[NextProtocol, bytes]]:
+            """
+            Protocols that connections created with this configuration should
+            advertise as supported during the TLS handshake. These may be
+            advertised using either or both of ALPN or NPN. This list of
+            protocols should be ordered by preference.
+            """
+
+        @property
+        def lowest_supported_version(self) -> TLSVersion:
+            """
+            The minimum version of TLS that should be allowed on TLS
+            connections using this configuration.
+            """
+
+        @property
+        def highest_supported_version(self) -> TLSVersion:
+            """
+            The maximum version of TLS that should be allowed on TLS
+            connections using this configuration.
+            """
+
+        @property
+        def trust_store(self) -> TrustStore:
+            """
+            The trust store that connections using this configuration will use
+            to validate certificates.
+            """
+
+        @property
+        def sni_callback(self) -> Optional[ServerNameCallback]:
+            """
+            A callback function that will be called after the TLS Client Hello
+            handshake message has been received by the TLS server when the TLS
+            client specifies a server name indication.
+
+            Only one callback can be set per ``TLSConfiguration``. If the
+            ``sni_callback`` is ``None`` then the callback is disabled. If the
+            ``TLSConfiguration`` is used for a ``ClientContext`` then this
+            setting will be ignored.
+
+            The ``callback`` function will be called with three arguments: the
+            first will be the ``TLSBufferObject`` for the connection; the
+            second will be a string that represents the server name that the
+            client is intending to communicate (or ``None`` if the TLS Client
+            Hello does not contain a server name); and the third argument will
+            be the original ``Context``. The server name argument will be the
+            IDNA *decoded* server name.
+
+            The ``callback`` must return ``None`` to allow negotiation to
+            continue. Other return values signal errors. Attempting to control
+            what error is signaled by the underlying TLS implementation is not
+            specified in this API, but is up to the concrete implementation to
+            handle.
+            """
+
+Context
+~~~~~~~
+
+The ``Context`` abstract base class defines an object that allows configuration
+of TLS. It can be thought of as a factory for ``TLSWrappedSocket`` and
+``TLSWrappedBuffer`` objects.
+
+The ``Context`` abstract base class has the following class definition::
+
+    TLSBufferObject = Union[TLSWrappedSocket, TLSWrappedBuffer]
+
+
+    class _BaseContext(metaclass=ABCMeta):
         @abstractmethod
-        def validate_certificates(self, val: bool) -> None:
-          pass
-
-        @abstractmethod
-        def register_certificates(self,
-                                  certificates: List[Certificate],
-                                  key: PrivateKey) -> None:
+        def __init__(self, configuration: TLSConfiguration):
             """
-            Loads a certificate, a number of intermediate certificates, and the
-            corresponding private key. These certificates will be offered to
-            the remote peer during the handshake if required.
-
-            The ``certificates`` argument must be a list of Certificate objects
-            as detailed below. The first Certificate must be the leaf
-            certificate. All subsequent certificates will be offered as
-            intermediate additional certificates.
-
-            The ``key`` argument must contain the private key associated with
-            the leaf certificate.
-            """
-
-        @abstractmethod
-        def set_ciphers(self, ciphers: List[CipherSuite]) -> None:
-            """
-            Set the available ciphers for TLS connections created with this
-            context. ``ciphers`` should be a list of ciphers from the
-            ``CipherSuite`` registry. If none of the ``ciphers`` provided to
-            this object are supported or available, a ``TLSError`` will be
-            raised.
-            """
-
-        @abstractmethod
-        def set_inner_protocols(self, protocols: List[Union[NextProtocol, bytes]]) -> None:
-            """
-            Specify which protocols the socket should advertise as supported
-            during the TLS handshake. This may be advertised using either or
-            both of ALPN or NPN.
-
-            ``protocols`` should be a list of acceptable protocols in the form
-            of ``NextProtocol`` objects, such as
-            ``[NextProtocol.H2, NextProtocol.HTTP1]``, ordered by preference.
-            The selection of the protocol will happen during the handshake,
-            and will use whatever protocol negotiation mechanisms are available
-            and supported by both peers. If the ``NextProtocol`` enum doesn't
-            contain a value for the protocol you'd like to negotiate, a byte
-            string can also be passed directly instead.
-
-            If the TLS implementation doesn't support protocol negotiation,
-            this method will raise ``NotImplementedError``.
-            """
-
-        @abstractmethod
-        def set_version_range(self, lower_bound=None: Optional[TLSVersion],
-                              upper_bound=None: Optional[TLSVersion]) -> None:
-            """
-            Set the minumum and maximum versions of TLS that should be allowed
-            on TLS connections made by this context.
-
-            If present, ``lower_bound`` will set the lowest acceptable TLS
-            version. If present, ``upper_bound`` will set the highest
-            acceptable TLS version. If either argument is ``None``, this will
-            leave that bound unchanged.
-            """
-
-        @abstractmethod
-        def use_trust_store(self, store: TrustStore) -> None:
-            """
-            Configures the Context to use a given trust store to validate
-            certificates. If not called, the default trust store will be used.
+            Create a new context object from a given TLS configuration.
             """
 
 
@@ -355,32 +422,6 @@ The ``Context`` abstract base class has the following class definition::
             create an in-memory stream for TLS. The SSL routines will read data
             from ``incoming`` and decrypt it, and write encrypted data to
             ``outgoing``.
-            """
-
-        @abstractmethod
-        def set_sni_callback(self, callback: Optional[ServerNameCallback]) -> None:
-            """
-            Register a callback function that will be called after the TLS
-            Client Hello handshake message has been received by the TLS server
-            when the TLS client specifies a server name indication.
-
-            Only one callback can be set per ``Context``. If ``callback`` is
-            ``None`` then the callback is disabled. Calling this function a
-            subsequent time will disable the previously registered callback.
-
-            The ``callback`` function will be called with three arguments: the
-            first will be the ``TLSBufferObject`` for the connection; the
-            second will be a string that represents the server name that the
-            client is intending to communicate (or ``None`` if the TLS Client
-            Hello does not contain a server name); and the third argument will
-            be the original ``Context``. The server name argument will be the
-            IDNA *decoded* server name.
-
-            The ``callback`` must return ``None`` to allow negotiation to
-            continue. Other return values signal errors. Attempting to control
-            what error is signaled by the underlying TLS implementation is not
-            specified in this API, but is up to the concrete implementation to
-            handle.
             """
 
 
