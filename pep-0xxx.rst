@@ -237,7 +237,7 @@ configuration object.
 
 The ``TLSConfiguration`` object would be defined by the following code:
 
-    ServerNameCallback = Callable[[TLSBufferObject, Optional[str], Context], Any]
+    ServerNameCallback = Callable[[TLSBufferObject, Optional[str], TLSConfiguration], Any]
 
 
     _configuration_fields = [
@@ -321,11 +321,17 @@ The ``TLSConfiguration`` object would be defined by the following code:
             be the original ``Context``. The server name argument will be the
             IDNA *decoded* server name.
 
-            The ``callback`` must return ``None`` to allow negotiation to
-            continue. Other return values signal errors. Attempting to control
-            what error is signaled by the underlying TLS implementation is not
-            specified in this API, but is up to the concrete implementation to
-            handle.
+            The ``callback`` must return a ``TLSConfiguration`` to allow
+            negotiation to continue. Other return values signal errors.
+            Attempting to control what error is signaled by the underlying TLS
+            implementation is not specified in this API, but is up to the
+            concrete implementation to handle.
+
+            The Context will do its best to apply the ``TLSConfiguration``
+            changes from its original configuration to the incoming connection.
+            This will usually include changing the certificate chain, but may
+            also include changes to allowable ciphers or any other
+            configuration settings.
         """
         __slots__ = ()
 
@@ -410,6 +416,12 @@ The ``Context`` abstract base class defines an object that allows configuration
 of TLS. It can be thought of as a factory for ``TLSWrappedSocket`` and
 ``TLSWrappedBuffer`` objects.
 
+As much as possible implementers should aim to make these classes immutable:
+that is, they should prefer not to allow users to mutate their internal state
+directly, instead preferring to create new contexts from new TLSConfiguration
+objects. Obviously, the ABCs cannot enforce this constraint, and so they do not
+attempt to.
+
 The ``Context`` abstract base class has the following class definition::
 
     TLSBufferObject = Union[TLSWrappedSocket, TLSWrappedBuffer]
@@ -420,6 +432,13 @@ The ``Context`` abstract base class has the following class definition::
         def __init__(self, configuration: TLSConfiguration):
             """
             Create a new context object from a given TLS configuration.
+            """
+
+        @property
+        @abstractmethod
+        def configuration(self) -> TLSConfiguration:
+            """
+            Returns the TLS configuration that was used to create the context.
             """
 
 
@@ -545,14 +564,6 @@ has the following definition::
             The ``Context`` object this socket is tied to.
             """
 
-        @context.setter
-        @abstractmethod
-        def context(self, value: Context) -> None:
-            """
-            Set the value of the ``Context`` object this socket is tied to.
-            This operation (changing the context) may not always be supported.
-            """
-
         @abstractproperty
         def negotiated_tls_version(self) -> Optional[TLSVersion]:
             """
@@ -663,14 +674,6 @@ has the following definition::
         def context(self) -> Context:
             """
             The ``Context`` object this socket is tied to.
-            """
-
-        @context.setter
-        @abstractmethod
-        def context(self, value: Context) -> None:
-            """
-            Set the value of the ``Context`` object this socket is tied to.
-            This operation (changing the context) may not always be supported.
             """
 
         @abstractproperty
