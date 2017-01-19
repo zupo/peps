@@ -778,28 +778,30 @@ SChannel
 
 SChannel is the Windows system TLS library.
 
-SChannel specifies cipher suites not by using symbolic constants but by using
-textual names for the cipher suites (the type used in the API is ``LPWSTR``,
-which is a Windows typedef for a pointer to a null-terminated string of
-16-bit unicode characters). The list of supported cipher suites is provided in
-`MSDN articles`_, and can be dynamically found at runtime by using the
-``BCryptEnumContextFunctions`` function appropriately.
+SChannel has extremely restrictive support for controlling available TLS
+cipher suites, and additionally adopts a third method of expressing what TLS
+cipher suites are supported.
 
-Much like SecureTransport, the names of the cipher suites are generally in-line
-with the formal names of the cipher suites, rather than using OpenSSL-specific
-naming conventions. There is one key difference: older versions of Windows
-may append an elliptic-curve to the end of cipher suite names that require the
-use of Elliptic-Curve Cryptography: for example,
-"TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384_P256". This restriction was lifted in
-Windows 10, but support of older Windows versions would require supporting this
-wrinkle.
+Specifically, SChannel defines a set of ``ALG_ID`` constants (C unsigned ints).
+Each of these constants does not refer to an entire cipher suite, but instead
+an individual algorithm. Some examples are ``CALG_3DES`` and ``CALG_AES_256``,
+which refer to the bulk encryption algorithm used in a cipher suite,
+``CALG_DH_EPHEM`` and ``CALG_RSA_KEYX`` which refer to part of the key exchange
+algorithm used in a cipher suite, ``CALG_SHA1`` and ``CALG_MD5`` which refer to
+the message authentication code used in a cipher suite, and ``CALG_ECDSA`` and
+``CALG_RSA_SIGN`` which refer to the signing portions of the key exchange
+algorithm.
 
-SChannel does not provide an API that can do a one-shot replacement of all
-cipher suites. Instead, the existing ones need to be removed, and then the new
-list needs to be inserted in order. This code is sufficiently complex that
-carrying a code example is beyond the scope of this PEP: instead, it should be
-noted that each cipher suite is removed and inserted individually, rather than
-using some kind of bulk API as SecureTransport and OpenSSL do.
+This can be thought of as the half of OpenSSL's functionality that
+SecureTransport doesn't have: SecureTransport only allows specifying exact
+cipher suites, while SChannel only allows specifying *parts* of the cipher
+suite, while OpenSSL allows both.
+
+Determining which cipher suites are allowed on a given connection is done by
+providing a pointer to an array of these ``ALG_ID`` constants. This means that
+any suitable API must allow the Python code to determine which ``ALG_ID``
+constants must be provided.
+
 
 Proposed Interface
 ^^^^^^^^^^^^^^^^^^
