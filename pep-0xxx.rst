@@ -272,7 +272,7 @@ The ``TLSConfiguration`` object would be defined by the following code:
             will throw a ``TLSError`` when this object is passed into a
             context object.
 
-        :param certificate_chain Tuple[List[Certificate],PrivateKey]: The
+        :param certificate_chain Tuple[Tuple[Certificate],PrivateKey]: The
             certificate, intermediate certificate, and the corresponding
             private key for the leaf certificate. These certificates will be
             offered to the remote peer during the handshake if required.
@@ -281,11 +281,11 @@ The ``TLSConfiguration`` object would be defined by the following code:
             subsequent certificates will be offered as intermediate additional
             certificates.
 
-        :param ciphers List[CipherSuite]:
+        :param ciphers Tuple[CipherSuite]:
             The available ciphers for TLS connections created with this
             configuration, in priority order.
 
-        :param inner_protocols List[Union[NextProtocol, bytes]]:
+        :param inner_protocols Tuple[Union[NextProtocol, bytes]]:
             Protocols that connections created with this configuration should
             advertise as supported during the TLS handshake. These may be
             advertised using either or both of ALPN or NPN. This list of
@@ -336,9 +336,9 @@ The ``TLSConfiguration`` object would be defined by the following code:
         __slots__ = ()
 
         def __new__(cls, validate_certificates=None: Optional[bool],
-                         certificate_chain=None: Optional[Tuple[List[Certificate], PrivateKey]],
-                         ciphers=None: Optional[List[CipherSuite]],
-                         inner_protocols=None: Optional[List[Union[NextProtocol, bytes]]],
+                         certificate_chain=None: Optional[Tuple[Tuple[Certificate], PrivateKey]],
+                         ciphers=None: Optional[Tuple[CipherSuite]],
+                         inner_protocols=None: Optional[Tuple[Union[NextProtocol, bytes]]],
                          lowest_supported_version=None: Optional[TLSVersion],
                          highest_supported_version=None: Optional[TLSVersion],
                          trust_store=None: Optional[TrustStore],
