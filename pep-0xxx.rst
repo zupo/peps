@@ -955,6 +955,10 @@ to load certificates from HSMs. If a common interface emerges for doing this,
 this module may be updated to provide a standard constructor for this use-case
 as well.
 
+Concrete implementations should aim to have Certificate objects be hashable if
+at all possible. This will help ensure that TLSConfiguration objects used with
+an individual concrete implementation are also hashable.
+
     class Certificate(metaclass=ABCMeta):
         @abstractclassmethod
         def from_buffer(cls, buffer: bytes) -> Certificate:
@@ -1047,6 +1051,10 @@ constructors. However, it is strongly recommended that a given TLS
 implementation provide the ``system`` constructor if at all possible, as this
 is the most common validation trust store that is used. Concrete
 implementations may also add their own constructors.
+
+Concrete implementations should aim to have TrustStore objects be hashable if
+at all possible. This will help ensure that TLSConfiguration objects used with
+an individual concrete implementation are also hashable.
 
     class TrustStore(metaclass=ABCMeta):
         @abstractclassmethod
