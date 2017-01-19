@@ -240,75 +240,70 @@ The ``TLSConfiguration`` object would be defined by the following code:
     ServerNameCallback = Callable[[TLSBufferObject, Optional[str], Context], Any]
 
 
-    class TLSConfiguration:
-        @property
-        def validate_certificates(self) -> bool:
-            """
-            Whether to validate the TLS certificates. This switch operates at a
-            very broad scope: either validation is enabled, in which case all
-            forms of validation are performed including hostname validation if
-            possible, or validation is disabled, in which case no validation is
-            performed.
+    _configuration_fields = [
+        'validate_certificates',
+        'certificate_chain',
+        'ciphers',
+        'inner_protocols',
+        'lowest_supported_version',
+        'highest_supported_version',
+        'trust_store',
+        'sni_callback',
+    ]
+
+
+    _DEFAULT_VALUE = object()
+
+
+    class TLSConfiguration(namedtuple('TLSConfiguration', _configuration_fields)):
+        """
+        An imutable TLS Configuration object. This object has the following
+        properties:
+
+        :param validate_certificates bool: Whether to validate the TLS
+            certificates. This switch operates at a very broad scope: either
+            validation is enabled, in which case all forms of validation are
+            performed including hostname validation if possible, or validation
+            is disabled, in which case no validation is performed.
 
             Not all backends support having their certificate validation
             disabled. If a backend does not support having their certificate
             validation disabled, attempting to set this property to ``False``
             will throw a ``TLSError`` when this object is passed into a
             context object.
-            """
 
-        @property
-        def certificate_chain(self) -> Tuple[List[Certificate], PrivateKey]:
-            """
-            The certificate, intermediate certificate, and the corresponding
+        :param certificate_chain Tuple[List[Certificate],PrivateKey]: The
+            certificate, intermediate certificate, and the corresponding
             private key for the leaf certificate. These certificates will be
             offered to the remote peer during the handshake if required.
 
             The first Certificate in the list must be the leaf certificate. All
             subsequent certificates will be offered as intermediate additional
             certificates.
-            """
 
-        @property
-        def ciphers(self) -> List[CipherSuite]:
-            """
+        :param ciphers List[CipherSuite]:
             The available ciphers for TLS connections created with this
             configuration, in priority order.
-            """
 
-        @property
-        def inner_protocols(self) -> List[Union[NextProtocol, bytes]]:
-            """
+        :param inner_protocols List[Union[NextProtocol, bytes]]:
             Protocols that connections created with this configuration should
             advertise as supported during the TLS handshake. These may be
             advertised using either or both of ALPN or NPN. This list of
             protocols should be ordered by preference.
-            """
 
-        @property
-        def lowest_supported_version(self) -> TLSVersion:
-            """
+        :param lowest_supported_version TLSVersion:
             The minimum version of TLS that should be allowed on TLS
             connections using this configuration.
-            """
 
-        @property
-        def highest_supported_version(self) -> TLSVersion:
-            """
+        :param highest_supported_version TLSVersion:
             The maximum version of TLS that should be allowed on TLS
             connections using this configuration.
-            """
 
-        @property
-        def trust_store(self) -> TrustStore:
-            """
+        :param trust_store TrustStore:
             The trust store that connections using this configuration will use
             to validate certificates.
-            """
 
-        @property
-        def sni_callback(self) -> Optional[ServerNameCallback]:
-            """
+        :param sni_callback Optional[ServerNameCallback]:
             A callback function that will be called after the TLS Client Hello
             handshake message has been received by the TLS server when the TLS
             client specifies a server name indication.
@@ -331,7 +326,82 @@ The ``TLSConfiguration`` object would be defined by the following code:
             what error is signaled by the underlying TLS implementation is not
             specified in this API, but is up to the concrete implementation to
             handle.
+        """
+        __slots__ = ()
+
+        def __new__(cls, validate_certificates=None: Optional[bool],
+                         certificate_chain=None: Optional[Tuple[List[Certificate], PrivateKey]],
+                         ciphers=None: Optional[List[CipherSuite]],
+                         inner_protocols=None: Optional[List[Union[NextProtocol, bytes]]],
+                         lowest_supported_version=None: Optional[TLSVersion],
+                         highest_supported_version=None: Optional[TLSVersion],
+                         trust_store=None: Optional[TrustStore],
+                         sni_callback=None: Optional[ServerNameCallback]):
+
+            if validate_certificates is None:
+                validate_certificates = True
+
+            if ciphers is None:
+                ciphers = DEFAULT_CIPHER_LIST
+
+            if inner_protocols is None:
+                inner_protocols = []
+
+            if lowest_supported_version is None:
+                lowest_supported_version = TLSVersion.TLSv1
+
+            if highest_supported_version is None:
+                highest_supported_version = TLSVersion.MAXIMUM_SUPPORTED
+
+            return super().__new__(
+                cls, validate_certificates, certificate_chain, ciphers,
+                inner_protocols, lowest_supported_version,
+                highest_supported_version, trust_store, sni_callback
+            )
+
+        def update(self, validate_certificates=_DEFAULT_VALUE,
+                         certificate_chain=_DEFAULT_VALUE,
+                         ciphers=_DEFAULT_VALUE,
+                         inner_protocols=_DEFAULT_VALUE,
+                         lowest_supported_version=_DEFAULT_VALUE,
+                         highest_supported_version=_DEFAULT_VALUE,
+                         trust_store=_DEFAULT_VALUE,
+                         sni_callback=_DEFAULT_VALUE):
             """
+            Create a new ``TLSConfiguration``, overriding some of the settings
+            on the original configuration with the new settings.
+            """
+            if validate_certificates is _DEFAULT_VALUE:
+                validate_certificates = self.validate_certificates
+
+            if certificate_chain is _DEFAULT_VALUE:
+                certificate_chain = self.certificate_chain
+
+            if ciphers is _DEFAULT_VALUE:
+                ciphers = self.ciphers
+
+            if inner_protocols is _DEFAULT_VALUE:
+                inner_protocols = self.inner_protocols
+
+            if lowest_supported_version is _DEFAULT_VALUE:
+                lowest_supported_version = self.lowest_supported_version
+
+            if highest_supported_version is _DEFAULT_VALUE:
+                highest_supported_version = self.highest_supported_version
+
+            if trust_store is _DEFAULT_VALUE:
+                trust_store = self.trust_store
+
+            if sni_callback is _DEFAULT_VALUE:
+                sni_callback = self.sni_callback
+
+            return self.__class__(
+                validate_certificates, certificate_chain, ciphers,
+                inner_protocols, lowest_supported_version,
+                highest_supported_version, trust_store, sni_callback
+            )
+
+
 
 Context
 ~~~~~~~
