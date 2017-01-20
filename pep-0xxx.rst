@@ -499,7 +499,7 @@ The ``Context`` abstract base class has the following class definition::
             certificates.
 
             The parameter ``auto_handshake`` specifies whether to do the SSL
-            handshake automatically after doing a ``socket.connect()``, or
+            handshake automatically after doing a ``socket.accept()``, or
             whether the application program will call it explicitly, by
             invoking the ``TLSWrappedSocket.do_handshake()`` method. Calling
             ``TLSWrappedSocket.do_handshake()`` explicitly gives the program
