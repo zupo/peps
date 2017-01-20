@@ -38,7 +38,7 @@ on the Python Package Index, rely on the ``ssl`` module for their TLS
 connectivity.
 
 Unfortunately, the preeminence of the ``ssl`` module has had a number of
-unforseen side-effects that have had the effect of tying the entire Python
+unforeseen side-effects that have had the effect of tying the entire Python
 ecosystem tightly to OpenSSL. This has forced Python users to use OpenSSL even
 in situations where it may provide a worse user experience than alternative TLS
 implementations, which imposes a cognitive burden and makes it hard to provide
@@ -257,7 +257,7 @@ The ``TLSConfiguration`` object would be defined by the following code:
 
     class TLSConfiguration(namedtuple('TLSConfiguration', _configuration_fields)):
         """
-        An imutable TLS Configuration object. This object has the following
+        An immutable TLS Configuration object. This object has the following
         properties:
 
         :param validate_certificates bool: Whether to validate the TLS
