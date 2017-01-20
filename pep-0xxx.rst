@@ -901,10 +901,10 @@ Errors
 ~~~~~~
 
 This module would define three base classes for use with error handling. Unlike
-the other classes defined here, these classes are not *abstract*, as they have
-no behaviour. They exist simply to signal certain common behaviours. Backends
-should subclass these exceptions in their own packages, but needn't define any
-behaviour for them.
+many of the the other classes defined here, these classes are not abstract, as
+they have no behaviour. They exist simply to signal certain common behaviours.
+Backends should subclass these exceptions in their own packages, but needn't
+define any behaviour for them.
 
 In general, concrete implementations should subclass these exceptions rather
 than throw them directly. This makes it moderately easier to determine which
