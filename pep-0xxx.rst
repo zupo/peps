@@ -444,9 +444,10 @@ The ``Context`` abstract base class has the following class definition::
 
     class ClientContext(_BaseContext):
         @abstractmethod
-        def wrap_socket(self, socket: socket.socket,
-                        auto_handshake=True: bool,
-                        server_hostname=None: Optional[str]) -> TLSWrappedSocket:
+        def wrap_socket(self,
+                        socket: socket.socket,
+                        server_hostname: Optional[str],
+                        auto_handshake=True: bool) -> TLSWrappedSocket:
             """
             Wrap an existing Python socket object ``socket`` and return a
             ``TLSWrappedSocket`` object. ``socket`` must be a ``SOCK_STREAM``
@@ -455,6 +456,13 @@ The ``Context`` abstract base class has the following class definition::
             The returned SSL socket is tied to the context, its settings and
             certificates.
 
+            The parameter ``server_hostname`` specifies the hostname of the
+            service which we are connecting to. This allows a single server to
+            host multiple SSL-based services with distinct certificates, quite
+            similarly to HTTP virtual hosts. This is also used to validate the
+            TLS certificate for the given hostname. If hostname validation is
+            not desired, then pass ``None`` for this parameter.
+
             The parameter ``auto_handshake`` specifies whether to do the SSL
             handshake automatically after doing a ``socket.connect()``, or
             whether the application program will call it explicitly, by
@@ -462,16 +470,11 @@ The ``Context`` abstract base class has the following class definition::
             ``TLSWrappedSocket.do_handshake()`` explicitly gives the program
             control over the blocking behavior of the socket I/O involved in
             the handshake.
-
-            The optional parameter ``server_hostname`` specifies the hostname
-            of the service which we are connecting to. This allows a single
-            server to host multiple SSL-based services with distinct
-            certificates, quite similarly to HTTP virtual hosts.
             """
 
         @abstractmethod
         def wrap_buffers(self, incoming: Any, outgoing: Any,
-                         server_hostname=None: Optional[str]) -> TLSWrappedBuffer:
+                         server_hostname: Optional[str]) -> TLSWrappedBuffer:
             """
             Wrap a pair of buffer objects (``incoming`` and ``outgoing``) to
             create an in-memory stream for TLS. The SSL routines will read data
