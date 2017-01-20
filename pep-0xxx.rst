@@ -607,7 +607,7 @@ has the following definition::
             """
 
         @abstractmethod
-        def read_into(self, buffer: Any, amt=None: int) -> int:
+        def readinto(self, buffer: Any, amt=None: int) -> int:
             """
             Read up to ``amt`` bytes of data from the input buffer into
             ``buffer``, which must be an object that implements the buffer
@@ -621,7 +621,7 @@ has the following definition::
             operation would have caused data to be written or read.
 
             As at any time a re-negotiation is possible, a call to
-            ``read_into()`` can also cause write operations.
+            ``readinto()`` can also cause write operations.
             """
 
         @abstractmethod
