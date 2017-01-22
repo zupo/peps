@@ -235,6 +235,11 @@ changed under their feet, which allows them to avoid needing to carefully
 synchronize changes between their concrete data structures and the
 configuration object.
 
+This object is extendable: that is, future releases of Python may add
+configuration fields to this object as they become useful. For
+backwards-compatibility purposes, new fields are only appended to this object.
+Existing fields will never be removed, renamed, or reordered.
+
 The ``TLSConfiguration`` object would be defined by the following code:
 
     ServerNameCallback = Callable[[TLSBufferObject, Optional[str], TLSConfiguration], Any]
