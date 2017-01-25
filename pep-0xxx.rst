@@ -500,6 +500,9 @@ The ``Context`` abstract base class has the following class definition::
             from ``incoming`` and decrypt it, and write encrypted data to
             ``outgoing``.
 
+            The buffer objects must be either file objects or objects that
+            implement the buffer protocol.
+
             The ``server_hostname`` parameter has the same meaning as in
             ``wrap_socket``.
             """
@@ -533,6 +536,9 @@ The ``Context`` abstract base class has the following class definition::
             create an in-memory stream for TLS. The SSL routines will read data
             from ``incoming`` and decrypt it, and write encrypted data to
             ``outgoing``.
+
+            The buffer objects must be either file objects or objects that
+            implement the buffer protocol.
             """
 
 
@@ -1128,9 +1134,6 @@ ToDo
   the SAN field are acceptable. This would break the union between SNI and
   cert validation, which may be a good thing (you can't SNI an IP address, but
   you can validate a cert with one if you want).
-* It's annoying that there's no type signature for fileobj. Do I really have to
-  define one as part of this PEP? Otherwise, how do I define the types of the
-  arguments to ``wrap_buffers``?
 * Do we need ways to control hostname validation?
 * Do we need to support getpeercert? Should we always return DER instead of the
   weird semi-structured thing?
