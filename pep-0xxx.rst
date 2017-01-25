@@ -1175,6 +1175,11 @@ but wherever possible features that are specific to individual implementations
 should not be added to the ABCs. The ABCs should restrict themselves to
 high-level descriptions of IETF-specified features.
 
+However, well-justified extensions to this API absolutely should be made. The
+focus of this API is to provide a unifying lowest-common-denominator
+configuration option for the Python community. TLS is not a static target, and
+as TLS evolves so must this API.
+
 
 References
 ==========
