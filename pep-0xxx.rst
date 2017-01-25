@@ -1126,22 +1126,6 @@ should not be added to the ABCs. The ABCs should restrict themselves to
 high-level descriptions of IETF-specified features.
 
 
-ToDo
-====
-
-* Consider adding a new parameter (``valid_subjects``?) to ``wrap_socket`` and
-  ``wrap_buffers`` that specifies in a *typed* manner what kind of entries in
-  the SAN field are acceptable. This would break the union between SNI and
-  cert validation, which may be a good thing (you can't SNI an IP address, but
-  you can validate a cert with one if you want).
-* Do we need ways to control hostname validation?
-* Do we need to support getpeercert? Should we always return DER instead of the
-  weird semi-structured thing?
-* How do we load certs from locations on disk? What about HSMs?
-* How do we signal to load certs from the OS? What happens if an implementation
-  doesn't let you *not* load those certs?
-
-
 References
 ==========
 
