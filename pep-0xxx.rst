@@ -417,9 +417,23 @@ The ``TLSConfiguration`` object would be defined by the following code:
 Context
 ~~~~~~~
 
-The ``Context`` abstract base class defines an object that allows configuration
-of TLS. It can be thought of as a factory for ``TLSWrappedSocket`` and
-``TLSWrappedBuffer`` objects.
+We define two Context abstract base classes. These ABCs define objects that
+allow configuration of TLS to be applied to specific connections. They can be
+thought of as factories for ``TLSWrappedSocket`` and ``TLSWrappedBuffer``
+objects.
+
+Unlike the current ``ssl`` module, we provide two context classes instead of
+one. Specifically, we provide the ``ClientContext`` and ``ServerContext``
+classes. This simplifies the APIs (for example, there is no sense in the server
+providing the ``server_hostname`` parameter to ``ssl.SSLContext.wrap_socket``,
+but because there is only one context class that parameter is still available),
+and ensures that implementations know as early as possible which side of a TLS
+connection they will serve. Additionally, it allows implementations to opt-out
+of one or either side of the connection. For example, SChannel on macOS is not
+really intended for server use and has an enormous amount of functionality
+missing for server-side use. This would allow SChannel implementations to
+simply not define a concrete subclass of ``ServerContext`` to signal their lack
+of support.
 
 As much as possible implementers should aim to make these classes immutable:
 that is, they should prefer not to allow users to mutate their internal state
