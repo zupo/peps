@@ -241,7 +241,7 @@ configuration fields to this object as they become useful. For
 backwards-compatibility purposes, new fields are only appended to this object.
 Existing fields will never be removed, renamed, or reordered.
 
-The ``TLSConfiguration`` object would be defined by the following code:
+The ``TLSConfiguration`` object would be defined by the following code::
 
     ServerNameCallback = Callable[[TLSBufferObject, Optional[str], TLSConfiguration], Any]
 
@@ -743,7 +743,7 @@ biggest problem with this format is that there is no formal specification for
 it, meaning that the only way to parse a given string the way OpenSSL would is
 to get OpenSSL to parse it.
 
-OpenSSL's cipher strings can look like this:
+OpenSSL's cipher strings can look like this::
 
     'ECDH+AESGCM:ECDH+CHACHA20:DH+AESGCM:DH+CHACHA20:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:RSA+AESGCM:RSA+AES:!aNULL:!eNULL:!MD5'
 
@@ -751,7 +751,7 @@ This string demonstrates some of the complexity of the OpenSSL format. For
 example, it is possible for one entry to specify multiple cipher suites: the
 entry ``ECDH+AESGCM`` means "all ciphers suites that include both
 elliptic-curve Diffie-Hellman key exchange and AES in Galois Counter Mode".
-More explicitly, that will expand to four cipher suites:
+More explicitly, that will expand to four cipher suites::
 
     "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256"
 
@@ -771,7 +771,7 @@ OpenSSL also uses different names for its ciphers than the names used in the
 relevant specifications. See the manual page for ``ciphers(1)`` for more
 details.
 
-The actual API inside OpenSSL for the cipher string is simple:
+The actual API inside OpenSSL for the cipher string is simple::
 
     char *cipher_list = <some cipher list>;
     int rc = SSL_CTX_set_cipher_list(context, cipher_list);
@@ -797,7 +797,7 @@ names of the cipher suites: that is, the cipher suite that OpenSSL calls
 "ECDHE-ECDSA-AES256-GCM-SHA384" is called
 "TLS_ECDHE_ECDHSA_WITH_AES_256_GCM_SHA384" in SecureTransport.
 
-The API for configuring cipher suites inside SecureTransport is simple:
+The API for configuring cipher suites inside SecureTransport is simple::
 
     SSLCipherSuite ciphers[] = {TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384, ...};
     OSStatus status = SSLSetEnabledCiphers(context, ciphers, sizeof(cphers));
@@ -858,6 +858,8 @@ provide helpers that can reintroduce OpenSSL's aggregation functionality.
 Because this enum would be enormous, the entire enum is not provided here.
 Instead, a small sample of entries is provided to give a flavor of how it will
 appear.
+
+::
 
     class CipherSuite(Enum):
         ...
@@ -988,6 +990,8 @@ Concrete implementations should aim to have Certificate objects be hashable if
 at all possible. This will help ensure that TLSConfiguration objects used with
 an individual concrete implementation are also hashable.
 
+::
+
     class Certificate(metaclass=ABCMeta):
         @abstractclassmethod
         def from_buffer(cls, buffer: bytes) -> Certificate:
@@ -1020,6 +1024,8 @@ Certificate class, this class has almost no behaviour in order to give as much
 freedom as possible to the concrete implementations to treat keys carefully.
 
 This class has all the caveats of the ``Certificate`` class.
+
+::
 
     class PrivateKey(metaclass=ABCMeta):
         @abstractclassmethod
@@ -1085,6 +1091,8 @@ Concrete implementations should aim to have TrustStore objects be hashable if
 at all possible. This will help ensure that TLSConfiguration objects used with
 an individual concrete implementation are also hashable.
 
+::
+
     class TrustStore(metaclass=ABCMeta):
         @abstractclassmethod
         def system(cls) -> TrustStore:
@@ -1127,7 +1135,7 @@ All concrete implementations must provide a method of obtaining a ``Backend``
 object. The ``Backend`` object can be a global singleton or can be created by a
 callable if there is an advantage in doing that.
 
-The ``Backend`` object has the following definition:
+The ``Backend`` object has the following definition::
 
     Backend = namedtuple(
         'Backend',
@@ -1136,7 +1144,7 @@ The ``Backend`` object has the following definition:
     )
 
 Each of the properties must provide the concrete implementation of the relevant
-ABC. This ensures that code like this will work for any backend:
+ABC. This ensures that code like this will work for any backend::
 
     trust_store = backend.trust_store.system()
 
