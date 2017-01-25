@@ -154,6 +154,7 @@ are:
 9. Specifying certificates to load, either as client or server certificates.
 10. Specifying which trust database should be used to validate certificates
     presented by a remote peer.
+11. Finding a way to get hold of these interfaces at run time.
 
 While it is technically possible to define (2) in terms of (3), for the sake of
 simplicity it is easier to define these as two separate ABCs. Implementations
@@ -1097,6 +1098,47 @@ an individual concrete implementation are also hashable.
             """
             Initializes a trust store from a single file full of PEMs.
             """
+
+
+Runtime Access
+~~~~~~~~~~~~~~
+
+A not-uncommon use case for library users is to want to allow the library to
+control the TLS configuration, but to want to select what backend is in use.
+For example, users of Requests may want to be able to select between OpenSSL or
+a platform-native solution on Windows and macOS, or between OpenSSL and NSS on
+some Linux platforms. These users, however, may not care about exactly how
+their TLS configuration is done.
+
+This poses a problem: given an arbitrary concrete implementation, how can a
+library work out how to load certificates into the trust store? There are two
+options: either all concrete implementations can be required to fit into a
+specific naming scheme, or we can provide an API that makes it possible to grab
+these objects.
+
+This PEP proposes that we use the second approach. This grants the greatest
+freedom to concrete implementations to structure their code as they see fit,
+requiring only that they provide a single object that has the appropriate
+properties in place. Users can then pass this "backend" object to libraries
+that support it, and those libraries can take care of configuring and using the
+concrete implementation.
+
+All concrete implementations must provide a method of obtaining a ``Backend``
+object. The ``Backend`` object can be a global singleton or can be created by a
+callable if there is an advantage in doing that.
+
+The ``Backend`` object has the following definition:
+
+    Backend = namedtuple(
+        'Backend',
+        ['client_context', 'server_context',
+         'certificate', 'private_key', 'trust_store']
+    )
+
+Each of the properties must provide the concrete implementation of the relevant
+ABC. This ensures that code like this will work for any backend:
+
+    trust_store = backend.trust_store.system()
 
 
 Changes to the Standard Library
