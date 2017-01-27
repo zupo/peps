@@ -1165,6 +1165,42 @@ This includes the following modules:
 - smtplib
 
 
+Migration of the ssl module
+---------------------------
+
+Naturally, we will need to extend the ``ssl`` module itself to conform to these
+ABCs. This extension will take the form of new classes, potentially in an
+entirely new module. This will allow applications that take advantage of the
+current ``ssl`` module to continue to do so, while enabling the new APIs for
+applications and libraries that want to use them.
+
+In general, migrating from the ``ssl`` module to the new ABCs is not expected
+to be one-to-one. This is normally acceptable: most tools that use the ``ssl``
+module hide it from the user, and so refactoring to use the new module should
+be invisible.
+
+However, a specific problem comes from libraries or applications that leak
+exceptions from the ``ssl`` module, either as part of their defined API or by
+accident (which is easily done). Users of those tools may have written code
+that tolerates and handles exceptions from the ``ssl`` module being raised:
+migrating to the ABCs presented here would potentially cause the exceptions
+defined above to be thrown instead, and existing ``except`` blocks will not
+catch them.
+
+For this reason, part of the migration of the ``ssl`` module would require that
+the exceptions in the ``ssl`` module alias those defined above. That is, they
+would require the following statements to all succeed::
+
+    assert ssl.SSLError is tls.TLSError
+    assert ssl.SSLWantReadError is tls.WantReadError
+    assert ssl.SSLWantWriteError is tls.WantWriteError
+
+The exact mechanics of how this will be done are beyond the scope of this PEP,
+as they are made more complex due to the fact that the current ``ssl``
+exceptions are defined in C code, but more details can be found in
+`an email sent to the Security-SIG by Christian Heimes`_.
+
+
 Future
 ======
 
@@ -1194,6 +1230,7 @@ References
 .. _SSLError: https://docs.python.org/3/library/ssl.html#ssl.SSLError
 .. _MSDN articles: https://msdn.microsoft.com/en-us/library/windows/desktop/mt490158(v=vs.85).aspx
 .. _tlsdb JSON file: https://github.com/tiran/tlsdb/blob/master/tlsdb.json
+.. _an email sent to the Security-SIG by Christian Heimes: https://mail.python.org/pipermail/security-sig/2017-January/000213.html
 
 
 Copyright
