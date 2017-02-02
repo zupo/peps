@@ -48,7 +48,7 @@ implementations, which imposes a cognitive burden and makes it hard to provide
 Problems
 --------
 
-The fact that the ``ssl`` module is build into the standard library has meant
+The fact that the ``ssl`` module is built into the standard library has meant
 that all standard-library Python networking libraries are entirely reliant on
 the OpenSSL that the Python implementation has been linked against. This
 leads to the following issues:
@@ -91,7 +91,7 @@ leads to the following issues:
 
 * Users may wish to integrate with TLS libraries other than OpenSSL for many
   other reasons, such as OpenSSL missing features (e.g. TLS 1.3 support), or
-  because OpenSSL is simply too large and unweildy for the platform (e.g. for
+  because OpenSSL is simply too large and unwieldy for the platform (e.g. for
   embedded Python). Those users are left with the requirement to use
   third-party networking libraries that can interact with their preferred TLS
   library or to shim their preferred library into the OpenSSL-specific ``ssl``
@@ -164,7 +164,7 @@ Obviously, (5) doesn't require an abstract base class: instead, it requires a
 richer API for configuring supported cipher suites that can be easily updated
 with supported cipher suites for different implementations.
 
-(9) is a thorny problem, becuase in an ideal world the private keys associated
+(9) is a thorny problem, because in an ideal world the private keys associated
 with these certificates would never end up in-memory in the Python process
 (that is, the TLS library would collaborate with a Hardware Security Module
 (HSM) to provide the private key in such a way that it cannot be extracted from
@@ -551,7 +551,7 @@ has the following definition::
 
     class TLSWrappedSocket(metaclass=ABCMeta):
         # The various socket methods all must be implemented. Their definitions
-        # have been elided from this class defintion in the PEP because they
+        # have been elided from this class definition in the PEP because they
         # aren't instructive.
         @abstractmethod
         def do_handshake(self) -> None:
