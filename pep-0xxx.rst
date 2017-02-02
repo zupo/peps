@@ -347,14 +347,14 @@ The ``TLSConfiguration`` object would be defined by the following code::
         """
         __slots__ = ()
 
-        def __new__(cls, validate_certificates=None: Optional[bool],
-                         certificate_chain=None: Optional[Tuple[Tuple[Certificate], PrivateKey]],
-                         ciphers=None: Optional[Tuple[CipherSuite]],
-                         inner_protocols=None: Optional[Tuple[Union[NextProtocol, bytes]]],
-                         lowest_supported_version=None: Optional[TLSVersion],
-                         highest_supported_version=None: Optional[TLSVersion],
-                         trust_store=None: Optional[TrustStore],
-                         sni_callback=None: Optional[ServerNameCallback]):
+        def __new__(cls, validate_certificates: Optional[bool] = None,
+                         certificate_chain: Optional[Tuple[Tuple[Certificate], PrivateKey]] = None,
+                         ciphers: Optional[Tuple[CipherSuite]] = None,
+                         inner_protocols: Optional[Tuple[Union[NextProtocol, bytes]]] = None,
+                         lowest_supported_version: Optional[TLSVersion] = None,
+                         highest_supported_version: Optional[TLSVersion] = None,
+                         trust_store: Optional[TrustStore] = None,
+                         sni_callback: Optional[ServerNameCallback] = None):
 
             if validate_certificates is None:
                 validate_certificates = True
@@ -473,7 +473,7 @@ The ``Context`` abstract base class has the following class definition::
         def wrap_socket(self,
                         socket: socket.socket,
                         server_hostname: Optional[str],
-                        auto_handshake=True: bool) -> TLSWrappedSocket:
+                        auto_handshake: bool = True) -> TLSWrappedSocket:
             """
             Wrap an existing Python socket object ``socket`` and return a
             ``TLSWrappedSocket`` object. ``socket`` must be a ``SOCK_STREAM``
@@ -518,7 +518,7 @@ The ``Context`` abstract base class has the following class definition::
     class ServerContext(_BaseContext):
         @abstractmethod
         def wrap_socket(self, socket: socket.socket,
-                        auto_handshake=True: bool) -> TLSWrappedSocket:
+                        auto_handshake: bool = True) -> TLSWrappedSocket:
             """
             Wrap an existing Python socket object ``socket`` and return a
             ``TLSWrappedSocket`` object. ``socket`` must be a ``SOCK_STREAM``
@@ -622,7 +622,7 @@ has the following definition::
 
     class TLSWrappedBuffer(metaclass=ABCMeta):
         @abstractmethod
-        def read(self, amt=None: int) -> bytes:
+        def read(self, amt: int = None) -> bytes:
             """
             Read up to ``amt`` bytes of data from the input buffer and return
             the result as a ``bytes`` instance. If ``amt`` is ``None``, will
@@ -639,7 +639,7 @@ has the following definition::
             """
 
         @abstractmethod
-        def readinto(self, buffer: Any, amt=None: int) -> int:
+        def readinto(self, buffer: Any, amt: int = None) -> int:
             """
             Read up to ``amt`` bytes of data from the input buffer into
             ``buffer``, which must be an object that implements the buffer
@@ -1037,7 +1037,7 @@ This class has all the caveats of the ``Certificate`` class.
         @abstractclassmethod
         def from_buffer(cls,
                         buffer: bytes,
-                        password=None: Optional[Union[Callable[[], Union[bytes, bytearray]], bytes, bytearray]]) -> PrivateKey:
+                        password: Optional[Union[Callable[[], Union[bytes, bytearray]], bytes, bytearray]] = None) -> PrivateKey:
             """
             Creates a PrivateKey object from a byte buffer. This byte buffer
             may be either PEM-encoded or DER-encoded. If the buffer is PEM
@@ -1061,7 +1061,7 @@ This class has all the caveats of the ``Certificate`` class.
         @abstractclassmethod
         def from_file(cls,
                       path: Union[pathlib.Path, bytes, str],
-                      password=None: Optional[Union[Callable[[], Union[bytes, bytearray]], bytes, bytearray]]) -> PrivateKey:
+                      password: Optional[Union[Callable[[], Union[bytes, bytearray]], bytes, bytearray]] = None) -> PrivateKey:
             """
             Creates a PrivateKey object from a file on disk. This method may
             be a convenience method that wraps ``open`` and ``from_buffer``,
