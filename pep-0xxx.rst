@@ -820,7 +820,7 @@ names of the cipher suites: that is, the cipher suite that OpenSSL calls
 The API for configuring cipher suites inside SecureTransport is simple::
 
     SSLCipherSuite ciphers[] = {TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384, ...};
-    OSStatus status = SSLSetEnabledCiphers(context, ciphers, sizeof(cphers));
+    OSStatus status = SSLSetEnabledCiphers(context, ciphers, sizeof(ciphers));
 
 SChannel
 ^^^^^^^^
