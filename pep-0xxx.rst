@@ -630,9 +630,16 @@ has the following definition::
             attempts to read would raise either ``WantReadError`` or
             ``WantWriteError``.
 
+            Once EOF is reached, all further calls to this method return the
+            empty byte string ``b''``.
+
             Raise ``WantReadError`` or ``WantWriteError`` if there is
             insufficient data in either the input or output buffer and the
             operation would have caused data to be written or read.
+
+            May raise ``RaggedEOF`` if the connection has been closed without a
+            graceful TLS shutdown. Whether this is an exception that should be
+            ignored or not is up to the specific application.
 
             As at any time a re-negotiation is possible, a call to ``read()``
             can also cause write operations.
@@ -648,9 +655,16 @@ has the following definition::
             attempts to read would raise either ``WantReadError`` or
             ``WantWriteError``, or until the buffer is full.
 
+            Once EOF is reached, all further calls to this method return the
+            empty byte string ``b''``.
+
             Raises ``WantReadError`` or ``WantWriteError`` if there is
             insufficient data in either the input or output buffer and the
             operation would have caused data to be written or read.
+
+            May raise ``RaggedEOF`` if the connection has been closed without a
+            graceful TLS shutdown. Whether this is an exception that should be
+            ignored or not is up to the specific application.
 
             As at any time a re-negotiation is possible, a call to
             ``readinto()`` can also cause write operations.
@@ -937,7 +951,7 @@ implementation.
 Errors
 ~~~~~~
 
-This module would define three base classes for use with error handling. Unlike
+This module would define four base classes for use with error handling. Unlike
 many of the the other classes defined here, these classes are not abstract, as
 they have no behaviour. They exist simply to signal certain common behaviours.
 Backends should subclass these exceptions in their own packages, but needn't
@@ -971,6 +985,24 @@ The definitions of the errors are below::
         buffer-only I/O is used. This error signals that the requested
         operation cannot complete until more data is read from the network, or
         until more data is available in the input buffer.
+        """
+
+    class RaggedEOF(TLSError):
+        """
+        A special signaling exception used when a TLS connection has been
+        closed gracelessly: that is, when a TLS CloseNotify was not received
+        from the peer before the underlying TCP socket reached EOF. This is a
+        so-called "ragged EOF".
+
+        This exception is not guaranteed to be raised in the face of a ragged
+        EOF: some implementations may not be able to detect or report the
+        ragged EOF.
+
+        This exception is not always a problem. Ragged EOFs are a concern only
+        when protocols are vulnerable to length truncation attacks. Any
+        protocol that can detect length truncation attacks at the application
+        layer (e.g. HTTP/1.1 and HTTP/2) is not vulnerable to this kind of
+        attack and so can ignore this exception.
         """
 
 
