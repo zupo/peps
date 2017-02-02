@@ -1158,11 +1158,12 @@ This includes the following modules:
 
 - asyncio
 - ftplib
-- http.client
+- http
 - imaplib
 - nntplib
 - poplib
 - smtplib
+- urllib
 
 
 Migration of the ssl module
