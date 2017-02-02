@@ -919,14 +919,14 @@ implementation.
 ::
 
     class TLSVersion(Enum):
-        MINIMUM_SUPPORTED
-        SSLv2
-        SSLv3
-        TLSv1
-        TLSv1_1
-        TLSv1_2
-        TLSv1_3
-        MAXIMUM_SUPPORTED
+        MINIMUM_SUPPORTED = auto
+        SSLv2 = auto
+        SSLv3 = auto
+        TLSv1 = auto
+        TLSv1_1 = auto
+        TLSv1_2 = auto
+        TLSv1_3 = auto
+        MAXIMUM_SUPPORTED = auto
 
 
 Errors
