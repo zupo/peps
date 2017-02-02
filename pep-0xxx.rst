@@ -430,11 +430,11 @@ providing the ``server_hostname`` parameter to ``ssl.SSLContext.wrap_socket``,
 but because there is only one context class that parameter is still available),
 and ensures that implementations know as early as possible which side of a TLS
 connection they will serve. Additionally, it allows implementations to opt-out
-of one or either side of the connection. For example, SChannel on macOS is not
-really intended for server use and has an enormous amount of functionality
-missing for server-side use. This would allow SChannel implementations to
-simply not define a concrete subclass of ``ServerContext`` to signal their lack
-of support.
+of one or either side of the connection. For example, SecureTransport on macOS
+is not really intended for server use and has an enormous amount of
+functionality missing for server-side use. This would allow SecureTransport
+implementations to simply not define a concrete subclass of ``ServerContext``
+to signal their lack of support.
 
 As much as possible implementers should aim to make these classes immutable:
 that is, they should prefer not to allow users to mutate their internal state
