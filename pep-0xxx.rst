@@ -1000,7 +1000,7 @@ an individual concrete implementation are also hashable.
 
     class Certificate(metaclass=ABCMeta):
         @abstractclassmethod
-        def from_buffer(cls, buffer: bytes) -> Certificate:
+        def from_buffer(cls, buffer: bytes):
             """
             Creates a Certificate object from a byte buffer. This byte buffer
             may be either PEM-encoded or DER-encoded. If the buffer is PEM
@@ -1012,7 +1012,7 @@ an individual concrete implementation are also hashable.
             """
 
         @abstractclassmethod
-        def from_file(cls, path: Union[pathlib.Path, AnyStr]) -> Certificate:
+        def from_file(cls, path: Union[pathlib.Path, AnyStr]):
             """
             Creates a Certificate object from a file on disk. This method may
             be a convenience method that wraps ``open`` and ``from_buffer``,
@@ -1037,7 +1037,7 @@ This class has all the caveats of the ``Certificate`` class.
         @abstractclassmethod
         def from_buffer(cls,
                         buffer: bytes,
-                        password: Optional[Union[Callable[[], Union[bytes, bytearray]], bytes, bytearray]] = None) -> PrivateKey:
+                        password: Optional[Union[Callable[[], Union[bytes, bytearray]], bytes, bytearray]] = None):
             """
             Creates a PrivateKey object from a byte buffer. This byte buffer
             may be either PEM-encoded or DER-encoded. If the buffer is PEM
@@ -1061,7 +1061,7 @@ This class has all the caveats of the ``Certificate`` class.
         @abstractclassmethod
         def from_file(cls,
                       path: Union[pathlib.Path, bytes, str],
-                      password: Optional[Union[Callable[[], Union[bytes, bytearray]], bytes, bytearray]] = None) -> PrivateKey:
+                      password: Optional[Union[Callable[[], Union[bytes, bytearray]], bytes, bytearray]] = None):
             """
             Creates a PrivateKey object from a file on disk. This method may
             be a convenience method that wraps ``open`` and ``from_buffer``,
