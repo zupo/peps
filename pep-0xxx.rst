@@ -324,8 +324,9 @@ The ``TLSConfiguration`` object would be defined by the following code::
             second will be a string that represents the server name that the
             client is intending to communicate (or ``None`` if the TLS Client
             Hello does not contain a server name); and the third argument will
-            be the original ``Context``. The server name argument will be the
-            IDNA *decoded* server name.
+            be the original ``TLSConfiguration`` that configured the
+            connection. The server name argument will be the IDNA *decoded*
+            server name.
 
             The ``callback`` must return a ``TLSConfiguration`` to allow
             negotiation to continue. Other return values signal errors.
