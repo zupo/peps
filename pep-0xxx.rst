@@ -207,8 +207,8 @@ applied to specific TLSWrappedBuffer, and TLSWrappedSocket objects.
 For this reason, we split the responsibility of `SSLContext`_ into two separate
 objects. The ``TLSConfiguration`` object is an object that acts as container
 for TLS configuration: the ``ClientContext`` and ``ServerContext`` objects are
-objects that are instantiated with a ``TLSConfiguration`` object. Both objects
-would be immutable.
+objects that are instantiated with a ``TLSConfiguration`` object. All three
+objects would be immutable.
 
 Configuration
 ~~~~~~~~~~~~~
