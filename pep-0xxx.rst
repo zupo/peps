@@ -210,6 +210,11 @@ for TLS configuration: the ``ClientContext`` and ``ServerContext`` objects are
 objects that are instantiated with a ``TLSConfiguration`` object. All three
 objects would be immutable.
 
+.. note:: The following API declarations uniformly use type hints to aid
+          reading. Some of these type hints cannot actually be used in practice
+          because they are circularly referential. Consider them more a
+          guideline than a reflection of the final code in the module.
+
 Configuration
 ~~~~~~~~~~~~~
 
