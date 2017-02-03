@@ -487,7 +487,9 @@ The ``Context`` abstract base class has the following class definition::
             host multiple SSL-based services with distinct certificates, quite
             similarly to HTTP virtual hosts. This is also used to validate the
             TLS certificate for the given hostname. If hostname validation is
-            not desired, then pass ``None`` for this parameter.
+            not desired, then pass ``None`` for this parameter. This parameter
+            has no default value because opting-out of hostname validation is
+            dangerous, and should not be the default behaviour.
 
             The parameter ``auto_handshake`` specifies whether to do the SSL
             handshake automatically after doing a ``socket.connect()``, or
