@@ -852,6 +852,32 @@ any suitable API must allow the Python code to determine which ``ALG_ID``
 constants must be provided.
 
 
+Network Security Services (NSS)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+NSS is Mozilla's crypto and TLS library. It's used in Firefox, Thunderbird,
+and as alternative to OpenSSL in multiple libraries, e.g. curl.
+
+By default, NSS comes with secure configuration of allowed ciphers. On some
+platforms such as Fedora, the list of enabled ciphers is globally configured
+in a system policy. Generally, applications should not modify cipher suites
+unless they have specific reasons to do so.
+
+NSS has both process global and per-connection settings for cipher suites. It
+does not have a concept of SSLContext like OpenSSL. A SSLContext-like behavior
+can be easily emulated. Specifically, ciphers can be enabled or disabled
+globally with ```SSL_CipherPrefSetDefault(PRInt32 cipher, PRBool enabled)```,
+and ```SSL_CipherPrefSet(PRFileDesc *fd, PRInt32 cipher, PRBool enabled)```
+for a connection. The cipher ```PRInt32``` number is a signed 32bit integer
+that directly corresponds to an registered IANA id, e.g. ```0x1301```
+is ```TLS_AES_128_GCM_SHA256```. Contrary to OpenSSL, the preference order
+of ciphers is fixed and cannot be modified at runtime.
+
+Like SecureTransport, NSS has no API for aggregated entries. Some consumers
+of NSS have implemented custom mappings from OpenSSL cipher names and rules
+to NSS ciphers, e.g. ```mod_nss```.
+
+
 Proposed Interface
 ^^^^^^^^^^^^^^^^^^
 
