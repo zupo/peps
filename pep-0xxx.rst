@@ -888,35 +888,169 @@ limitations of the above implementations. Specifically, as every implementation
 *except* OpenSSL requires that each individual cipher be provided, there is no
 option but to provide that lowest-common denominator approach.
 
-The simplest approach is to provide an enumerated type that includes all of the
-cipher suites defined for TLS. The values of the enum members will be their
-two-octet cipher identifier as used in the TLS handshake, stored as a tuple of
-integers. The names of the enum members will be their IANA-registered cipher
-suite names.
+The simplest approach is to provide an enumerated type that includes a large
+subset of the cipher suites defined for TLS. The values of the enum members
+will be their two-octet cipher identifier as used in the TLS handshake,
+stored as a 16 bit integer. The names of the enum members will be their
+IANA-registered cipher suite names.
 
-Rather than populate this enum by hand, it is likely that we'll define a
-script that can build it from Christian Heimes' `tlsdb JSON file`_ (warning:
-large file). This also opens up the possibility of extending the API with
-additional querying function, such as determining which TLS versions support
-which ciphers, if that functionality is found to be useful or necessary.
+As of now, the `IANA cipher suite registry`_ contains over 320 cipher suites.
+A large portion of the cipher suites are irrelevant for TLS connections to
+network services. Other suites specify deprecated and insecure algorithms
+that are no longer provided by recent versions of implementations. The enum
+does not contain ciphers with:
+
+* key exchange: NULL, Kerberos (KRB5), pre-shared key (PSK), secure remote
+  transport (TLS-SRP)
+* authentication: NULL, anonymous, export grade, Kerberos (KRB5),
+  pre-shared key (PSK), secure remote transport (TLS-SRP), DSA cert (DSS)
+* encryption: NULL, ARIA, DES, RC2, export grade 40bit
+* PRF: MD5
+* SCSV cipher suites
+
+3DES, RC4, SEED, and IDEA are included for legacy applications. Further more
+five additional cipher suites from the TLS 1.3 draft (draft-ietf-tls-tls13-18)
+are included, too. TLS 1.3 does not share any cipher suites with TLS 1.2 and
+earlier. The resulting enum will contain roughly 110 suites.
+
+Rather than populate this enum by hand, we have a `TLS enum script`_ that
+builds it from Christian Heimes' `tlsdb JSON file`_ (warning:
+large file) and `IANA cipher suite registry`_. The TLSDB also opens up the
+possibility of extending the API with additional querying function,
+such as determining which TLS versions support which ciphers, if that
+functionality is found to be useful or necessary.
 
 If users find this approach to be onerous, a future extension to this API can
 provide helpers that can reintroduce OpenSSL's aggregation functionality.
 
-Because this enum would be enormous, the entire enum is not provided here.
-Instead, a small sample of entries is provided to give a flavor of how it will
-appear.
-
 ::
 
-    class CipherSuite(Enum):
-        ...
-        TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA = (0xC0, 0x12)
-        ...
-        TLS_ECDHE_ECDSA_WITH_AES_128_CCM = (0xC0, 0xAC)
-        ...
-        TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256 = (0xC0, 0x2B)
-        ...
+    class CipherSuite(IntEnum):
+        TLS_RSA_WITH_RC4_128_SHA = 0x0005
+        TLS_RSA_WITH_IDEA_CBC_SHA = 0x0007
+        TLS_RSA_WITH_3DES_EDE_CBC_SHA = 0x000a
+        TLS_DH_RSA_WITH_3DES_EDE_CBC_SHA = 0x0010
+        TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA = 0x0016
+        TLS_RSA_WITH_AES_128_CBC_SHA = 0x002f
+        TLS_DH_RSA_WITH_AES_128_CBC_SHA = 0x0031
+        TLS_DHE_RSA_WITH_AES_128_CBC_SHA = 0x0033
+        TLS_RSA_WITH_AES_256_CBC_SHA = 0x0035
+        TLS_DH_RSA_WITH_AES_256_CBC_SHA = 0x0037
+        TLS_DHE_RSA_WITH_AES_256_CBC_SHA = 0x0039
+        TLS_RSA_WITH_AES_128_CBC_SHA256 = 0x003c
+        TLS_RSA_WITH_AES_256_CBC_SHA256 = 0x003d
+        TLS_DH_RSA_WITH_AES_128_CBC_SHA256 = 0x003f
+        TLS_RSA_WITH_CAMELLIA_128_CBC_SHA = 0x0041
+        TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA = 0x0043
+        TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA = 0x0045
+        TLS_DHE_RSA_WITH_AES_128_CBC_SHA256 = 0x0067
+        TLS_DH_RSA_WITH_AES_256_CBC_SHA256 = 0x0069
+        TLS_DHE_RSA_WITH_AES_256_CBC_SHA256 = 0x006b
+        TLS_RSA_WITH_CAMELLIA_256_CBC_SHA = 0x0084
+        TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA = 0x0086
+        TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA = 0x0088
+        TLS_RSA_WITH_SEED_CBC_SHA = 0x0096
+        TLS_DH_RSA_WITH_SEED_CBC_SHA = 0x0098
+        TLS_DHE_RSA_WITH_SEED_CBC_SHA = 0x009a
+        TLS_RSA_WITH_AES_128_GCM_SHA256 = 0x009c
+        TLS_RSA_WITH_AES_256_GCM_SHA384 = 0x009d
+        TLS_DHE_RSA_WITH_AES_128_GCM_SHA256 = 0x009e
+        TLS_DHE_RSA_WITH_AES_256_GCM_SHA384 = 0x009f
+        TLS_DH_RSA_WITH_AES_128_GCM_SHA256 = 0x00a0
+        TLS_DH_RSA_WITH_AES_256_GCM_SHA384 = 0x00a1
+        TLS_RSA_WITH_CAMELLIA_128_CBC_SHA256 = 0x00ba
+        TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA256 = 0x00bc
+        TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA256 = 0x00be
+        TLS_RSA_WITH_CAMELLIA_256_CBC_SHA256 = 0x00c0
+        TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA256 = 0x00c2
+        TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA256 = 0x00c4
+        TLS_AES_128_GCM_SHA256 = 0x1301
+        TLS_AES_256_GCM_SHA384 = 0x1302
+        TLS_CHACHA20_POLY1305_SHA256 = 0x1303
+        TLS_AES_128_CCM_SHA256 = 0x1304
+        TLS_AES_128_CCM_8_SHA256 = 0x1305
+        TLS_ECDH_ECDSA_WITH_RC4_128_SHA = 0xc002
+        TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA = 0xc003
+        TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA = 0xc004
+        TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA = 0xc005
+        TLS_ECDHE_ECDSA_WITH_RC4_128_SHA = 0xc007
+        TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA = 0xc008
+        TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA = 0xc009
+        TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA = 0xc00a
+        TLS_ECDH_RSA_WITH_RC4_128_SHA = 0xc00c
+        TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA = 0xc00d
+        TLS_ECDH_RSA_WITH_AES_128_CBC_SHA = 0xc00e
+        TLS_ECDH_RSA_WITH_AES_256_CBC_SHA = 0xc00f
+        TLS_ECDHE_RSA_WITH_RC4_128_SHA = 0xc011
+        TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA = 0xc012
+        TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA = 0xc013
+        TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA = 0xc014
+        TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256 = 0xc023
+        TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384 = 0xc024
+        TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256 = 0xc025
+        TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384 = 0xc026
+        TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256 = 0xc027
+        TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384 = 0xc028
+        TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256 = 0xc029
+        TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384 = 0xc02a
+        TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256 = 0xc02b
+        TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 = 0xc02c
+        TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256 = 0xc02d
+        TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384 = 0xc02e
+        TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 = 0xc02f
+        TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 = 0xc030
+        TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256 = 0xc031
+        TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384 = 0xc032
+        TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_CBC_SHA256 = 0xc072
+        TLS_ECDHE_ECDSA_WITH_CAMELLIA_256_CBC_SHA384 = 0xc073
+        TLS_ECDH_ECDSA_WITH_CAMELLIA_128_CBC_SHA256 = 0xc074
+        TLS_ECDH_ECDSA_WITH_CAMELLIA_256_CBC_SHA384 = 0xc075
+        TLS_ECDHE_RSA_WITH_CAMELLIA_128_CBC_SHA256 = 0xc076
+        TLS_ECDHE_RSA_WITH_CAMELLIA_256_CBC_SHA384 = 0xc077
+        TLS_ECDH_RSA_WITH_CAMELLIA_128_CBC_SHA256 = 0xc078
+        TLS_ECDH_RSA_WITH_CAMELLIA_256_CBC_SHA384 = 0xc079
+        TLS_RSA_WITH_CAMELLIA_128_GCM_SHA256 = 0xc07a
+        TLS_RSA_WITH_CAMELLIA_256_GCM_SHA384 = 0xc07b
+        TLS_DHE_RSA_WITH_CAMELLIA_128_GCM_SHA256 = 0xc07c
+        TLS_DHE_RSA_WITH_CAMELLIA_256_GCM_SHA384 = 0xc07d
+        TLS_DH_RSA_WITH_CAMELLIA_128_GCM_SHA256 = 0xc07e
+        TLS_DH_RSA_WITH_CAMELLIA_256_GCM_SHA384 = 0xc07f
+        TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_GCM_SHA256 = 0xc086
+        TLS_ECDHE_ECDSA_WITH_CAMELLIA_256_GCM_SHA384 = 0xc087
+        TLS_ECDH_ECDSA_WITH_CAMELLIA_128_GCM_SHA256 = 0xc088
+        TLS_ECDH_ECDSA_WITH_CAMELLIA_256_GCM_SHA384 = 0xc089
+        TLS_ECDHE_RSA_WITH_CAMELLIA_128_GCM_SHA256 = 0xc08a
+        TLS_ECDHE_RSA_WITH_CAMELLIA_256_GCM_SHA384 = 0xc08b
+        TLS_ECDH_RSA_WITH_CAMELLIA_128_GCM_SHA256 = 0xc08c
+        TLS_ECDH_RSA_WITH_CAMELLIA_256_GCM_SHA384 = 0xc08d
+        TLS_RSA_WITH_AES_128_CCM = 0xc09c
+        TLS_RSA_WITH_AES_256_CCM = 0xc09d
+        TLS_DHE_RSA_WITH_AES_128_CCM = 0xc09e
+        TLS_DHE_RSA_WITH_AES_256_CCM = 0xc09f
+        TLS_RSA_WITH_AES_128_CCM_8 = 0xc0a0
+        TLS_RSA_WITH_AES_256_CCM_8 = 0xc0a1
+        TLS_DHE_RSA_WITH_AES_128_CCM_8 = 0xc0a2
+        TLS_DHE_RSA_WITH_AES_256_CCM_8 = 0xc0a3
+        TLS_ECDHE_ECDSA_WITH_AES_128_CCM = 0xc0ac
+        TLS_ECDHE_ECDSA_WITH_AES_256_CCM = 0xc0ad
+        TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8 = 0xc0ae
+        TLS_ECDHE_ECDSA_WITH_AES_256_CCM_8 = 0xc0af
+        TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 = 0xcca8
+        TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 = 0xcca9
+        TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256 = 0xccaa
+
+
+Enum members can be mapped to OpenSSL cipher names::
+
+    >>> import ssl
+    >>> ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
+    >>> ctx.set_ciphers('ALL:COMPLEMENTOFALL')
+    >>> ciphers = {c['id'] & 0xffff: c['name'] for c in ctx.get_ciphers()}
+    >>> ciphers[CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256]
+    'ECDHE-RSA-AES128-GCM-SHA256'
+
+
+.. TODO: Figure out mappings for SChannel and SecureTransport
 
 
 Protocol Negotiation
@@ -1296,7 +1430,9 @@ References
 .. _SSLObject: https://docs.python.org/3/library/ssl.html#ssl.SSLObject
 .. _SSLError: https://docs.python.org/3/library/ssl.html#ssl.SSLError
 .. _MSDN articles: https://msdn.microsoft.com/en-us/library/windows/desktop/mt490158(v=vs.85).aspx
+.. _TLS enum script: https://github.com/tiran/tlsdb/blob/master/tlspep_ciphersuite.py
 .. _tlsdb JSON file: https://github.com/tiran/tlsdb/blob/master/tlsdb.json
+.. _IANA cipher suite registry: https://www.iana.org/assignments/tls-parameters/tls-parameters.xhtml#tls-parameters-4
 .. _an email sent to the Security-SIG by Christian Heimes: https://mail.python.org/pipermail/security-sig/2017-January/000213.html
 
 
