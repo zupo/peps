@@ -1,0 +1,71 @@
+PEP: 9999
+Title: SSL module improvements and deprecations
+Version: $Revision$
+Last-Modified: $Date$
+Author: Christian Heimes <christian@python.org>
+Status: Draft
+Type: Standards Track
+Content-Type: text/x-rst
+Created: 15-Jun-2017
+Post-History:
+
+
+Abstract
+========
+
+The ssl module wraps OpenSSL to provide Transport Layer Security (TLS)
+protocol for network sockets and memory BIOs. When properly done, TLS
+guarantees confidentiality and peer authentication for communication over
+public networks. TLS delivers the *secure* part of HTTPS and therefore plays
+a vital role for all network-based Python applications and libraries, most
+noticeable PIP.
+
+Network security in general and especially TLS protocol and public key
+infrastructure (PKI) are fast moving, constantly evolving environments.
+Missing features, restrictions imposed by support for old OpenSSL versions,
+and past design decisions that turned out to be problematic in
+retrospective, are weakening security of TLS support in the standard library
+of Python.
+
+This PEP proposes a series of changes and enhancement to make the ssl module
+fit for the future. Some suggested improvements will lay the ground for PEP
+543 (unified TLS API) and extend the scope of PEP 476 (enable certificate
+validation by default). Other changes give developers better, secure default
+settings, TLS 1.3, and additional features for certificate validation. Finally
+several improvements are made possible by new features in OpenSSL or required
+by deprecations in OpenSSL 1.1.0+.
+
+Rationale
+=========
+
+Internationalized Domain Names (IDN)
+====================================
+
+
+
+
+Resources
+=========
+
+References
+==========
+
+.. [1] UTS 46, Unicode IDNA compatibility processing
+   (http://www.unicode.org/reports/tr46/)
+
+
+Copyright
+=========
+
+This document has been placed in the public domain.
+
+
+
+..
+   Local Variables:
+   mode: indented-text
+   indent-tabs-mode: nil
+   sentence-end-double-space: t
+   fill-column: 70
+   coding: utf-8
+   End:
