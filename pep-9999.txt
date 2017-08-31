@@ -38,22 +38,28 @@ by deprecations in OpenSSL 1.1.0+.
 Rationale
 =========
 
+TODO
+
 Hostname verification
 =====================
 
-Use OpenSSL ``X509_check_host`` / ``X509_check_ip``
+TODO
 
-``check_hostname = True`` -> ``verify_mode = CERT_REQUIRED``
+* Drop ssl.match_hostname() and use OpenSSL ``X509_check_host`` / ``X509_check_ip``
+* ``check_hostname = True`` implies ``verify_mode = CERT_REQUIRED``
+* Add verify parameters?
+* Add options to disable IP address matching, partial wildcards and CN?
+
 
 Internationalized Domain Names (IDN)
 ====================================
 
-server_hostname accepts IDN U-label str, IDN A-label (ASCII compatible
-encoding) str, and A-label bytes.
+TODO
 
-SSLSocket.server_hostname changed to IDN A-label str
-
-server_name_callback changed to IDN A-label str
+* server_hostname accepts IDN U-label str, IDN A-label (ASCII compatible
+  encoding) str, and A-label bytes.
+* SSLSocket.server_hostname changed to IDN A-label str
+* SSLContext.server_name_callback() changed to IDN A-label str
 
 Default cipher suite configuration
 ==================================
@@ -125,32 +131,161 @@ configuration shall be::
     Python's ssl module does neither support *Secure Remote Password* nor
     *Pre-shared Key* authentication.
 
-
 New features
 ============
 
 C-API export (PyCapsule)
 ------------------------
 
+TODO
 
 TLS version range
 -----------------
 
+TODO
+
 * ``SSLContext.min_version``
 * ``SSLContext.max_version``
+
+Based on PEP-0543::
+
+    class TLSVersion(Enum):
+        MINIMUM_SUPPORTED = ...
+        SSLv2 = SSL2_VERSION
+        SSLv3 = SSL3_VERSION
+        TLSv1 = TLS1_VERSION
+        TLSv1_1 = TLS1_1_VERSION
+        TLSv1_2 = TLS1_2_VERSION
+        TLSv1_3 = TLS1_3_VERSION
+        MAXIMUM_SUPPORTED = TLS_MAX_VERSION
+
+
+TLS 1.3 support
+===============
+
+https://www.openssl.org/blog/blog/2017/05/04/tlsv1.3/
+
+New cipher suites
+-----------------
+
+* TLS13-AES-128-GCM-SHA256
+* TLS13-AES-256-GCM-SHA384
+* TLS13-CHACHA20-POLY1305-SHA256
+
+Curve groups
+------------
+
+https://www.openssl.org/docs/manmaster/man3/SSL_CTX_set1_groups.html
+
+
+Key update request
+------------------
+
+https://www.openssl.org/docs/manmaster/man3/SSL_key_update.html
+
+Session handling
+----------------
+
+https://www.openssl.org/docs/manmaster/man3/SSL_CTX_sess_set_new_cb.html
+https://github.com/openssl/openssl/issues/1550#issuecomment-287179654
 
 
 Deprecations
 ============
 
-SSL 2.0 and 3.0 support
------------------------
+* SSL 2.0 and 3.0 support
+* ``ssl.match_hostname()``
+* ``ssl.wrap_socket()``
+* ``ssl.RAND_pseudo_bytes()``
+* ``ssl.RAND_egd()``
+* ``ssl.SSLContext.set_npn_protocols()``
+* ``ssl.SSLSocket.compression()``
+* ``ssl.SSLSocket.selected_npn_protocol()``
+* ``ssl.PROTOCOL_TLS``
+* ``ssl.PROTOCOL_SSLv23``
+* ``ssl.PROTOCOL_SSLv2``
+* ``ssl.PROTOCOL_SSLv3``
+* ``ssl.PROTOCOL_TLSv1``
+* ``ssl.PROTOCOL_TLS1_1``
+* ``ssl.PROTOCOL_TLS1_2``
+* ``ssl.OP_NO_SSLv2``
+* ``ssl.OP_NO_SSLv3``
+* ``ssl.OP_NO_TLS1``
+* ``ssl.OP_NO_TLS1_1``
+* ``ssl.OP_NO_TLS1_2``
+* ``ssl.OP_NO_TLS1_3``
+* ``ssl.HAS_ALPN``
+* ``ssl.HAS_ECDH``
+* ``ssl.HAS_NPN``
+* ``ssl.HAS_SNI``
+* ``ssl.Purpose.CLIENT_AUTH``
+* ``ssl.Purpose.SERVER_AUTH``
+* ``server_side`` parameter of ``ssl.SSLContext.wrap_socket()`` and
+  ``ssl.SSLContext.wrap_bio()``
 
+SSL 2.0 and 3.0
+---------------
+
+SSL 2.0 and 3.0 are ancient versions with several known security issues. For
+many years it is highly recommended to avoid them. SSL 2.0 has been officially
+deprecated by RFC 6176 in 2011, SSL 3.0 was later deprecated by RFC 7568 in
+2015. Even legacy applications should support TLS 1.0 or better by now. After
+all TLS 1.0 is available since 1999.
+
+Python's ssl module has disabled SSLv2 and SSLv3 support for
+``PROTOCOL_SSLv23`` / ``PROTOCOL_TLS`` in order to avoid downgrade attacks
+during handshake. Further more OpenSSL 1.1 no longer contains the functionality
+to establish a SSLv2 connection. It can be expected that SSLv3 support will be
+discontinued with OpenSSL 1.2.
+
+Compression
+-----------
+
+TLS used to have the capability to compress its payload before it was
+encrypted. The feature deemed to be useful for transparent encryption of
+protocols that did not support compression itself. Later researchers have
+shown that TLS compression of HTTP can be abused by third-parties to infer and
+steal authentication cookies. Because of this vulnerability, TLS compression
+should no longer be used. The feature has been removed from TLS 1.3 all along.
+Since the attack was made public, Python's SSLContext comes with compression
+disabled by default.
+
+Therefore ``SSLSocket.compression()`` no longer serves a purpose and can be
+removed without replacement.
+
+HAS_* constants
+---------------
+
+Without support for obsolete OpenSSL versions, ``HAS_ALPN``, ``HAS_ECDH``,
+``HAS_NPN``, and ``HAS_SNI`` are no longer useful. OpenSSL >= 1.0.2 always
+incorporates Application-Layer Protocol Negotiation, elliptic curve
+Diffie-Hellmann and server name indication. NPN support is deprecated.
 
 PROTOCOL_* constants
 --------------------
 
+The ``PROTOCOL_*`` constants map directly to OpenSSL's ``SSL_METHOD *``, e.g.
+``PROTOCOL_TLS1_1`` creates a SSLContext with
+``SSL_CTX *ctx = SSL_CTX_new(TLSv1_1_method());``. OpenSSL 1.1 has deprecated
+all protocol-specific SSL methods in favor of the auto-negotiation method. It
+negotiates the highest available TLS protocol that is both supported and
+enabled on the client and on the server. In Python this method is available as
+``PROTOCOL_SSLv23`` or under its new name ``PROTOCOL_TLS``.
 
+A SSLContext with ``PROTOCOL_TLS`` can create server and client sockets at the
+same time. This feature doesn't make sense. A client needs different settings
+than a server, e.g. a client must have peer verification and hostname checking
+enabled. A server never uses hostname verification and only enables
+``CERT_REQUIRED``, in case it wants to perform TLS client cert authentication.
+
+In order to make the diverging requirements for server-side and client-side
+context explicit, all protocols but ``PROTOCOL_TLS_CLIENT`` and
+``PROTOCOL_TLS_SERVER`` are deprecated. This also allows us to drop more
+items: ```CLIENT_AUTH``, ``SERVER_AUTH``, and ``server_side`` parameter to
+``wrap_socket()`` and ``wrap_bio``. Further more a client-side SSLContext
+can have different defaults than a server-side context.
+``ssl.SSLContext(PROTOCOL_TLS_CLIENT)`` will have cert validation and hostname
+checking enabled by default.
 
 OP_NO_SSL* / OP_NO_TLS* constants
 ---------------------------------
@@ -190,12 +325,28 @@ remaining ``PROTOCOL_*`` constants, the flags no longer serve any purpose.
 ssl.wrap_socket()
 -----------------
 
-Use SSLContext.wrap_socket()
+The function ``ssl.wrap_socket()`` is inefficient and takes way too many
+parameters. Developers should rather create and cache a SSLContext and use
+use ``SSLContext.wrap_socket()`` to wrap a socket.
 
-server_side paramater of SSLContext.wrap_socket()
+ssl.match_hostname()
+--------------------
+
+Hostname checking is handled by OpenSSL.
+
+Expose ``X509_check_host()`` and ``X509_check_ip_asc`` with X509 object?
+
+server_side parameter of SSLContext.wrap_socket()
 -------------------------------------------------
 
-superseded by ``PROTOCOL_TLS_SERVER``
+The ``server_side`` flag can be inferred from the protocol of the SSLContext.
+``PROTOCOL_TLS_SERVER`` will ``server_side=True``.
+
+RAND_pseudo_bytes and EDG
+-------------------------
+
+``RAND_pseudo_bytes()`` and entropy gathering daemon support have been
+dropped from OpenSSL 1.1.
 
 Backend libraries
 =================
@@ -217,6 +368,7 @@ Datagram Transport Layer Security (DTLS)
 ----------------------------------------
 
 Required for QUIC support
+
 
 Resources
 =========
