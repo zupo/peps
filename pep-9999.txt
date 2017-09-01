@@ -42,17 +42,91 @@ Rationale
 TODO
 
 
-Hostname verification
-=====================
 
-TODO
 
-* Drop ssl.match_hostname() and use OpenSSL ``X509_check_host``
-  / ``X509_check_ip``
-* ``check_hostname = True`` implies ``verify_mode = CERT_REQUIRED``
-* Add verify parameters?
+Host name matching
+==================
+
+For a client-side socket, verify mode ``CERT_REQUIRED`` only checks
+that a certificate and its cert chain is cryptographically signed
+by a root CA certificate and all certificates in the chain include
+include the necessary flags. It's a necessary but not a sufficient
+step in certificate validation. A client must also ensure the
+relation between a certificate and the server. Hostname matching
+is the process of validating that a server certificate applies to
+the fully qualified domain name of a server.
+
+In the past, OpenSSL did not contain any code to perform host name
+matching. Application were required to role their own implementation.
+This caused code duplication and various security issues, because
+it is far from trivial to cover all edge cases.
+
+Python had multiple security issues just caused by incorrect or
+buggy hostname matching:
+
+* Until Python 3.2 and 2.7.9, the ssl module was not capable of
+  performing host name matching. ``ssl.match_hostname()`` was
+  introduced in 3.2.0 and later back-ported to 2.7.9.
+* Issue #12000: Subject CN was ignored when a subject alternative
+  name extension (SAN) was present without dNSName entries, thus
+  violating RFC 2818.
+* CVE-2013-2099: Multiple wildcard characters could be abused
+  for Denial-of-Service attack in the re module.
+* Issue #17997: RFC 2818 was superseded by RFC 6125, which no longer
+  allows multiple wildcard characters. Wildcards are only supported
+  in the left-most label.
+* Issue #17997: ``ssl.match_hostname()`` did not implement partial
+  wildcards of international domain names correctly.
+* Issue #18709: The ssl module used an inappropriate OpenSSL function
+  to convert host names from ASN.1 to strings. A host name with an
+  embedded NULL byte could be abused to trick validation.
+* Issue #17305: The ssl module does not handle IDNA 2008-encoded
+  host names correctly. It converts from IDN A-label (ASCII
+  compatible encoding) to IDN U-label (unicode) with Python's idna
+  encoding, which is IDNA 2003-only.
+* Issue #30141: The host name is not verified when a SSLSocket is
+  created with ``do_handshake_on_connect=False`` and the application
+  causes an implicit handshake w/o calling do_handshake() explicitly.
+* A SSLSocket performs host name matching *after* the handshake and
+  during the handshake. In case of an invalid host name, a client
+  is suppose to abort the connection with appropriate TLS alert.
+  This causes two problem. For one the server is not informed about
+  a problem with the certificate. Also an invalid host name does not
+  prevent the client from sending a TLS client authentication
+  cert to a malicious server. The cert typically contains personal
+  information like username and department.
+
+OpenSSL 1.0.2+ API
+------------------
+
+OpenSSL 1.0.2 introduced an APIs for validation of host names
+and IP addresses. The API was later ported to LibreSSL and is
+available since LibreSSL 2.5.3. It's easy to use and resolves all
+above issues.
+
+API::
+
+    X509_VERIFY_PARAM *SSL_get0_param(SSL *ssl);
+    int X509_VERIFY_PARAM_set1_host(X509_VERIFY_PARAM *param,
+                                    const char *name,
+                                    size_t namelen);
+    int X509_VERIFY_PARAM_set1_ip_asc(X509_VERIFY_PARAM *param,
+                                      const char *ipasc);
+    void X509_VERIFY_PARAM_set_hostflags(X509_VERIFY_PARAM *param,
+                                         unsigned int flags);
+
+    #define X509_CHECK_FLAG_NO_WILDCARDS         0x2
+    #define X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS 0x4
+    #define X509_CHECK_FLAG_NEVER_CHECK_SUBJECT  0x20
+
+
 * Add options to disable IP address matching, partial wildcards and
-  CN?
+  CN matching?
+
+Relationship between check_hostname and verify_mode
+---------------------------------------------------
+
+* ``check_hostname = True`` implies ``verify_mode = CERT_REQUIRED``
 
 
 Internationalized Domain Names (IDN)
@@ -366,7 +440,7 @@ RAND_pseudo_bytes and EDG
 -------------------------
 
 ``RAND_pseudo_bytes()`` and entropy gathering daemon support have
-been dropped from OpenSSL 1.1. 
+been dropped from OpenSSL 1.1.
 
 Backend libraries
 =================

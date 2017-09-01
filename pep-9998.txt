@@ -1,0 +1,400 @@
+PEP: 9998
+Title: OpenSSL support schedule
+Version: $Revision$
+Last-Modified: $Date$
+Author: Christian Heimes <christian@python.org>
+Status: Draft
+Type: Standards Track
+Content-Type: text/x-rst
+Created: 17-Sep-2017
+Post-History:
+
+
+Abstract
+========
+
+
+Rationale
+=========
+
+TODO
+
+TLS/SSL and crypto backend libraries
+====================================
+
+OpenSSL
+-------
+
+
+
+BoringSSL
+---------
+
+BoringSSL is Google's fork of OpenSSL. It is tailored for Google's
+specific needs and not intended for general use. BoringSSL does neither
+guarantee any kind of backwards compatibility nor API or ABI stability.
+This makes BoringSSL unsuitable for use in Python. Therefore the ssl
+does not support BoringSSL as backend.
+
+LibreSSL
+--------
+
+LibreSSL is a fork of OpenSSL. The fork was created by members of
+the OpenBSD team in 2014 in light of the heartbleed vulnerability.
+LibreSSL started off OpenSSL 1.0.1g. Since then multiple new
+features were added (SNI, ALPN, ChaCha20-Poly1305), and other
+features deemed problematic or insecure were removed or replaced
+(SSL 2.0, SSL 3.0, improved CPRNG). Some features were backported
+from OpenSSL and BoringSSL, e.g. hostname verification. The fork
+replaces OpenSSL on several platforms, most noticeable
+Alpine Linux, DragonFly BSD, and OpenBSD.
+
+LibreSSL is mostly API compatible with OpenSSL 1.0.2, but not ABI
+compatible with OpenSSL's libssl and libcrypto. As of version 2.5.3
+it supports all OpenSSL 1.0.2 features that required by proposed
+improvements of Python's ssl module.
+
+Known differences between OpenSSL and LibreSSL are:
+
+* LibreSSL ignores ``SSL_CERT_FILE`` and ``SSL_CERT_DIR`` envs vars.
+* LibreSSL hijacks ``OPENSSL_VERSION_NUMBER`` and hard-codes it to
+  ``0x20000000`` (2.0.0). Any OpenSSL API version check macro in
+  C code must be written as::
+
+     #if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER)
+         /* OpenSSL >= 1.1.0 code here */
+     #endif
+
+libtls
+~~~~~~
+
+LibreSSL also provides a new library called ``libtls``. It provides
+a simpler, more fool proof API for application. Since libtls is not
+available with OpenSSL, the ssl module cannot use libtls.
+
+Other
+-----
+
+Other well-known TLS libraries are GnuTLS, NSS (Mozilla), SChannel
+(Microsoft), and Secure Transport (Apple). All libraries have their
+own API and are not compatible with Python's ssl module.
+
+
+OpenSSL / LibreSSL support on major platforms
+=============================================
+
+According to Distro Watch, the latest releases of all major Linux and
+BSD distribution ship with either OpenSSL new than 1.0.2 or LibreSSL
+newer than 2.5.3. By the release of Python 3.7 in June 2018, only
+CentOS 6, Debian 8, and RHEL 6 have not yet reached end of lifetime and
+come with a. All three versions are old stable versions with new long term
+support releases available for at least one year. Python 3.7 users are
+kindly requested to upgrade their platform or stick to a vendored Python
+interpreter.
+
+On Windows and macOS, CPython installer
+
+Alpine
+  2.7.8
+    OpenSSL 1.0.1g **UNSUPPORTED**
+  3.2.2
+    OpenSSL 1.0.2d
+  3.6.2
+    LibreSSL 2.5.4
+Arch Linux
+  current
+    OpenSSL 1.1.0f
+CentOS
+  6.9 (EOL 2020-11)
+    OpenSSL 1.0.1e **UNSUPPORTED**
+  7.3-1611
+    OpenSSL 1.0.1e **UNSUPPORTED**
+  7.4-1708
+    OpenSSL 1.0.2k
+Debian
+  7.0 (EOL 2018-05)
+    OpenSSL 1.0.1e **UNSUPPORTED**
+  8.0 (2020-05)
+    OpenSSL 1.0.1k **UNSUPPORTED**
+  9
+    OpenSSL 1.1.0f
+  testing
+    OpenSSL 1.1.0f
+  unstable
+    OpenSSL 1.1.0f
+Fedora
+  25
+    OpenSSL 1.0.2j
+  26
+    OpenSSL 1.1.0f
+  rawhide
+    OpenSSL 1.1.0f
+FreeBSD
+  10.3
+    OpenSSL 1.0.2
+  11.1
+    LibreSSL 2.5.4
+  11-stable
+    LibreSSL 2.5.5
+  12-current
+    LibreSSL 2.5.5
+Gentoo
+  20160514
+    OpenSSL 1.0.2g
+  stable
+    OpenSSL 1.0.2k
+  unstable
+    LibreSSL 2.6.0
+macOS
+  Apple has deprecated OpenSSL support in favor of Apple's own
+  SecureTransport and CommonCrypto libraries. Python's official
+  builds of CPython use OpenSSL 1.1.0+.
+NetBSD
+  6.1.5
+    OpenSSL 1.0.2e
+  7.0.2
+    OpenSSL 1.0.2h
+  pkgsrc
+    OpenSSL 1.0.2h
+OpenBSD
+  5.9
+    OpenSSL 1.0.2fp
+  6.0
+    OpenSSL 1.0.2h
+  6.1
+    OpenSSL 1.0.2k
+openSuSE
+  42.2
+    OpenSSL 1.0.2j
+  42.3
+    OpenSSL 1.0.2j
+  tumbleweed
+    OpenSSL 1.0.2l
+    OpenSSL 1.1.0f
+    LibreSSL 2.6.0
+Raspbian
+  2017-07-05
+    OpenSSL 1.0.1t **UNSUPPORTED**
+  2017-09-07
+    OpenSSL 1.1.0f
+Red Hat Enterprise Linux
+  RHEL 6.9 (EOL 2020-11)
+    OpenSSL 1.0.1e **UNSUPPORTED**
+  RHEL 7.3
+    OpenSSL 1.0.1e **UNSUPPORTED**
+  RHEL 7.4
+    OpenSSL 1.0.2k
+Ubuntu
+  14.04 (EOL 2019-04)
+    OpenSSL 1.0.1f **UNSUPPORTED**
+  16.04
+    OpenSSL 1.0.2g
+  16.10
+    OpenSSL 1.0.2g
+  17.04
+    OpenSSL 1.0.2g
+  snapshot
+    OpenSSL 1.0.2g
+Windows
+  Python's Windows binaries come with copy of OpenSSL 1.1.0+.
+
+
+Version support levels
+======================
+
+Security
+--------
+
+Full security support
+API-only security support (limited)
+No security support
+
+Feature
+-------
+
+All features supported
+
+
+
+Host name matching
+==================
+
+For a client-side socket, verify mode ``CERT_REQUIRED`` only checks
+that a certificate and its cert chain is cryptographically signed
+by a root CA certificate and all certificates in the chain include
+include the necessary flags. It's a necessary but not a sufficient
+step in certificate validation. A client must also ensure the
+relation between a certificate and the server. Hostname matching
+is the process of validating that a server certificate applies to
+the fully qualified domain name of a server.
+
+In the past, OpenSSL did not contain any code to perform host name
+matching. Application were required to role their own implementation.
+This caused code duplication and various security issues, because
+it is far from trivial to cover all edge cases.
+
+Python had multiple security issues just caused by incorrect or
+buggy hostname matching:
+
+* Until Python 3.2 and 2.7.9, the ssl module was not capable of
+  performing host name matching. ``ssl.match_hostname()`` was
+  introduced in 3.2.0 and later back-ported to 2.7.9.
+* Issue #12000: Subject CN was ignored when a subject alternative
+  name extension (SAN) was present without dNSName entries, thus
+  violating RFC 2818.
+* CVE-2013-2099: Multiple wildcard characters could be abused
+  for Denial-of-Service attack in the re module.
+* Issue #17997: RFC 2818 was superseded by RFC 6125, which no longer
+  allows multiple wildcard characters. Wildcards are only supported
+  in the left-most label.
+* Issue #17997: ``ssl.match_hostname()`` did not implement partial
+  wildcards of international domain names correctly.
+* Issue #18709: The ssl module used an inappropriate OpenSSL function
+  to convert host names from ASN.1 to strings. A host name with an
+  embedded NULL byte could be abused to trick validation.
+* Issue #17305: The ssl module does not handle IDNA 2008-encoded
+  host names correctly. It converts from IDN A-label (ASCII
+  compatible encoding) to IDN U-label (unicode) with Python's idna
+  encoding, which is IDNA 2003-only.
+* Issue #30141: The host name is not verified when a SSLSocket is
+  created with ``do_handshake_on_connect=False`` and the application
+  causes an implicit handshake w/o calling do_handshake() explicitly.
+* A SSLSocket performs host name matching *after* the handshake and
+  during the handshake. In case of an invalid host name, a client
+  is suppose to abort the connection with appropriate TLS alert.
+  This causes two problem. For one the server is not informed about
+  a problem with the certificate. Also an invalid host name does not
+  prevent the client from sending a TLS client authentication
+  cert to a malicious server. The cert typically contains personal
+  information like username and department.
+
+OpenSSL 1.0.2+ API
+------------------
+
+OpenSSL 1.0.2 introduced an APIs for validation of host names
+and IP addresses. The API was later ported to LibreSSL and is
+available since LibreSSL 2.5.3. It's easy to use and resolves all
+above issues.
+
+API::
+
+    X509_VERIFY_PARAM *SSL_get0_param(SSL *ssl);
+    int X509_VERIFY_PARAM_set1_host(X509_VERIFY_PARAM *param,
+                                    const char *name,
+                                    size_t namelen);
+    int X509_VERIFY_PARAM_set1_ip_asc(X509_VERIFY_PARAM *param,
+                                      const char *ipasc);
+    void X509_VERIFY_PARAM_set_hostflags(X509_VERIFY_PARAM *param,
+                                         unsigned int flags);
+
+    #define X509_CHECK_FLAG_NO_WILDCARDS         0x2
+    #define X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS 0x4
+    #define X509_CHECK_FLAG_NEVER_CHECK_SUBJECT  0x20
+
+
+* Add options to disable IP address matching, partial wildcards and
+  CN matching?
+
+
+Default cipher suite configuration
+==================================
+
+A cipher suite defines a combination of cryptographic algorithms
+which are used to establish a TLS connection and to encrypt data.
+Up to TLS 1.2 each cipher suite definition contains a key
+agreement/key exchange algorithms, an authentication algorithms,
+bulk encryption with mode, and finally a pseudo-random function or
+MAC algorithm. Some suites are only available with specific TLS or
+SSL versions, e.g. AES-GCM suites require TLS 1.2. In TLS 1.3,
+cipher suites no longer define key agreement and authentication,
+previous cipher suites no longer apply to TLS 1.3.
+
+For example the OpenSSL name ``ECDHE-RSA-AES256-GCM-SHA384`` refers
+to the IANA cipher suite name
+``TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384`` (0xC030). It uses
+ephemeral elliptic-curve Diffie-Hellmann as key agreement protocol,
+certificates with RSA signature to authenticate the peer, AES with
+256 bit key strength and authenticated encryption mode GCM, and
+HMAC-SHA384 as MAC algorithm for the handshake. The TLS 1.3 variant
+is called ``TLS_AES_256_GCM_SHA384`` (0x1302) by IANA and
+``TLS13-AES-256-GCM-SHA384`` by OpenSSL.
+
+Better default cipher settings
+------------------------------
+
+In the past OpenSSL's default selection of cipher suites was
+problematic -- to say the least. It seems like maximum
+compatibility with ancient clients was more important than maximum
+security. For example OpenSSL 0.9.8zh had DES (sic!) enabled in its
+DEFAULT rule. Therefore Python's security team decided to ignore
+OpenSSL's default settings and to come up with its own rule set.
+
+In recent time OpenSSL has stepped up its game. Nowadays the
+default suite selection is sound and ciphers are sorted in a
+sensible way, meaning ciphers with larger key length and perfect
+forward secrecy are preferred. In fact Python's hard override is
+causing trouble and reduces security in some cases. When SWEET32
+attack on 3DES and other encryption algorithms with 64 bit block
+size was announced, OpenSSL removed vulnerable ciphers from its
+default list. Python was re-adding 3DES cipher suites, thus
+counteracting OpenSSL and reducing security. The problem was
+eventually fixed by issue 27850. It took a lengthy discussion and
+four merges to drop 3DES. Python 3.4 was the last supported Python
+version that received the fix -- more than one year after
+the issue was filed.
+
+In order to reduce the burden on release managers and to directly
+benefit from improvements in OpenSSL, Python should use a different
+approach. Instead of a positive list, the ssl module shall use
+OpenSSL's defaults combined with a block list of bad or irrelevant
+algorithms. This approach would also automatically enable new
+cipher suites such as ChaCha20-Poly1305 or TLS 1.3. OpenSSL has a
+domain specific language that makes the approach feasible because
+unknown or unsupported qualifiers are simply ignored. The new cipher
+suite configuration shall be::
+
+   DEFAULT:!MD5:!3DES:!DES:!RC4:!IDEA:!SEED:!aDSS:!SRP:!PSK
+
+``DEFAULT``
+    is OpenSSL's default cipher list. It does not contain anonymous,
+    NULL encryption, and weak ciphers. Since OpenSSL 1.0.0 the list
+    is in sensible order.
+``!MD5``
+    Omit ciphers with MD5 hash function. MD5 is broken.
+``!3DES``, ``!DES``, ``RC4``, ``!IDEA``, ``!SEED``
+    Omit ciphers with TripleDES, standard DES, RC4, IDEA, or SEED
+    encryption algorithm. These algorithms have known
+    weaknesses or are considered obsolete.
+``aDSS``
+    No authentication with DSA certificate. This refers to old
+    discrete logarithm DSA algorithm, not ECDSA over finite fields.
+``!SRP``, ``!PSK``
+    Python's ssl module does neither support *Secure Remote Password*
+    nor *Pre-shared Key* authentication.
+
+
+
+Resources
+=========
+
+
+References
+==========
+
+
+
+Copyright
+=========
+
+This document has been placed in the public domain.
+
+
+
+..
+   Local Variables:
+   mode: indented-text
+   indent-tabs-mode: nil
+   sentence-end-double-space: t
+   fill-column: 70
+   coding: utf-8
+   End:
