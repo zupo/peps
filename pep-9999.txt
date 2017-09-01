@@ -13,26 +13,27 @@ Post-History:
 Abstract
 ========
 
-The ssl module wraps OpenSSL to provide Transport Layer Security (TLS)
-protocol for network sockets and memory BIOs. When properly done, TLS
-guarantees confidentiality and peer authentication for communication over
-public networks. TLS delivers the *secure* part of HTTPS and therefore plays
-a vital role for all network-based Python applications and libraries, most
-noticeable PIP.
+The ssl module wraps OpenSSL to provide Transport Layer Security
+(TLS) protocol for network sockets and memory BIOs. When properly
+done, TLS guarantees confidentiality and peer authentication for
+communication over public networks. TLS delivers the *secure* part
+of HTTPS and therefore plays a vital role for all network-based
+Python applications and libraries, most noticeable PIP.
 
-Network security in general and especially TLS protocol and public key
-infrastructure (PKI) are fast moving, constantly evolving environments.
-Missing features, restrictions imposed by support for old OpenSSL versions,
-and past design decisions that turned out to be problematic in
-retrospective, are weakening security of TLS support in the standard library
-of Python.
+Network security in general and especially TLS protocol and public
+key infrastructure (PKI) are fast moving, constantly evolving
+environments. Missing features, restrictions imposed by support for
+old OpenSSL versions, and past design decisions that turned out to
+be problematic in retrospective, are weakening security of TLS
+support in the standard library of Python.
 
-This PEP proposes a series of changes and enhancement to make the ssl module
-fit for the future. Some suggested improvements will lay the ground for PEP
-543 (unified TLS API) and extend the scope of PEP 476 (enable certificate
-validation by default). Other changes give developers better, secure default
-settings, TLS 1.3, and additional features for certificate validation. Finally
-several improvements are made possible by new features in OpenSSL or required
+This PEP proposes a series of changes and enhancement to make the
+ssl module fit for the future. Some suggested improvements will lay
+the ground for PEP543 (unified TLS API) and extend the scope of
+PEP 476 (enable certificate validation by default). Other changes
+give developers better, secure default settings, TLS 1.3, and
+additional features for certificate validation. Finally several
+improvements are made possible by new features in OpenSSL or required
 by deprecations in OpenSSL 1.1.0+.
 
 Rationale
@@ -40,15 +41,18 @@ Rationale
 
 TODO
 
+
 Hostname verification
 =====================
 
 TODO
 
-* Drop ssl.match_hostname() and use OpenSSL ``X509_check_host`` / ``X509_check_ip``
+* Drop ssl.match_hostname() and use OpenSSL ``X509_check_host``
+  / ``X509_check_ip``
 * ``check_hostname = True`` implies ``verify_mode = CERT_REQUIRED``
 * Add verify parameters?
-* Add options to disable IP address matching, partial wildcards and CN?
+* Add options to disable IP address matching, partial wildcards and
+  CN?
 
 
 Internationalized Domain Names (IDN)
@@ -56,80 +60,86 @@ Internationalized Domain Names (IDN)
 
 TODO
 
-* server_hostname accepts IDN U-label str, IDN A-label (ASCII compatible
-  encoding) str, and A-label bytes.
+* server_hostname accepts IDN U-label str, IDN A-label (ASCII
+  compatible encoding) str, and A-label bytes.
 * SSLSocket.server_hostname changed to IDN A-label str
 * SSLContext.server_name_callback() changed to IDN A-label str
 
 Default cipher suite configuration
 ==================================
 
-A cipher suite defines a combination of cryptographic algorithms which
-are used to establish a TLS connection and to encrypt data. Up to TLS 1.2 each
-cipher suite definition contains a key agreement/key exchange algorithms, an
-authentication algorithms, bulk encryption with mode, and finally a
-pseudo-random function or MAC algorithm. Some suites are only available with
-specific TLS or SSL versions, e.g. AES-GCM suites require TLS 1.2. In TLS 1.3,
-cipher suites no longer define key agreement and authentication, previous
-cipher suites no longer apply to TLS 1.3.
+A cipher suite defines a combination of cryptographic algorithms
+which are used to establish a TLS connection and to encrypt data.
+Up to TLS 1.2 each cipher suite definition contains a key
+agreement/key exchange algorithms, an authentication algorithms,
+bulk encryption with mode, and finally a pseudo-random function or
+MAC algorithm. Some suites are only available with specific TLS or
+SSL versions, e.g. AES-GCM suites require TLS 1.2. In TLS 1.3,
+cipher suites no longer define key agreement and authentication,
+previous cipher suites no longer apply to TLS 1.3.
 
-For example the OpenSSL name ``ECDHE-RSA-AES256-GCM-SHA384`` refers to the IANA
-cipher suite name ``TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384`` (0xC030). It
-uses ephemeral elliptic-curve Diffie-Hellmann as key agreement protocol,
-certificates with RSA signature to authenticate the peer, AES with 256 bit key
-strength and authenticated encryption mode GCM, and HMAC-SHA384 as MAC
-algorithm for the handshake. The TLS 1.3 variant is called
-``TLS_AES_256_GCM_SHA384`` (0x1302) by IANA and ``TLS13-AES-256-GCM-SHA384``
-by OpenSSL.
+For example the OpenSSL name ``ECDHE-RSA-AES256-GCM-SHA384`` refers
+to the IANA cipher suite name
+``TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384`` (0xC030). It uses
+ephemeral elliptic-curve Diffie-Hellmann as key agreement protocol,
+certificates with RSA signature to authenticate the peer, AES with
+256 bit key strength and authenticated encryption mode GCM, and
+HMAC-SHA384 as MAC algorithm for the handshake. The TLS 1.3 variant
+is called ``TLS_AES_256_GCM_SHA384`` (0x1302) by IANA and
+``TLS13-AES-256-GCM-SHA384`` by OpenSSL.
 
-Better defaults
----------------
+Better default cipher settings
+------------------------------
 
-In the past OpenSSL's default selection of cipher suites was problematic -- to
-say the least. It seems like maximum compatibility with ancient clients was
-more important than maximum security. For example OpenSSL 0.9.8zh had DES
-(sic!) enabled in its DEFAULT rule. Therefore Python's security team decided to
-ignore OpenSSL's default settings and to come up with its own rule set.
+In the past OpenSSL's default selection of cipher suites was
+problematic -- to say the least. It seems like maximum
+compatibility with ancient clients was more important than maximum
+security. For example OpenSSL 0.9.8zh had DES (sic!) enabled in its
+DEFAULT rule. Therefore Python's security team decided to ignore
+OpenSSL's default settings and to come up with its own rule set.
 
-In recent time OpenSSL has stepped up its game. Nowadays the default suite
-selection is sound and ciphers are sorted in a sensible way, meaning ciphers
-with larger key length and perfect forward secrecy are preferred. In fact
-Python's hard override is causing trouble and reduces security in some cases.
-When SWEET32 attack on 3DES and other encryption algorithms with 64 bit block
-size was announced, OpenSSL removed vulnerable ciphers from its default list.
-Python was re-adding 3DES cipher suites, thus counteracting OpenSSL and
-reducing security. The problem was eventually fixed by issue 27850. It took a
-lengthy discussion and four merges to drop 3DES. Python 3.4 was the last
-supported Python version that received the fix -- more than one year after
+In recent time OpenSSL has stepped up its game. Nowadays the
+default suite selection is sound and ciphers are sorted in a
+sensible way, meaning ciphers with larger key length and perfect
+forward secrecy are preferred. In fact Python's hard override is
+causing trouble and reduces security in some cases. When SWEET32
+attack on 3DES and other encryption algorithms with 64 bit block
+size was announced, OpenSSL removed vulnerable ciphers from its
+default list. Python was re-adding 3DES cipher suites, thus
+counteracting OpenSSL and reducing security. The problem was
+eventually fixed by issue 27850. It took a lengthy discussion and
+four merges to drop 3DES. Python 3.4 was the last supported Python
+version that received the fix -- more than one year after
 the issue was filed.
 
-In order to reduce the burden on release managers and to directly benefit
-from improvements in OpenSSL, Python should use a different approach. Instead
-of a positive list, the ssl module shall use OpenSSL's defaults combined
-with a block list of bad or irrelevant algorithms. This approach would also
-automatically enable new cipher suites such as ChaCha20-Poly1305 or TLS 1.3.
-OpenSSL has a domain specific language that makes the approach feasible because
-unknown or unsupported qualifiers are simply ignored. The new cipher suite
-configuration shall be::
+In order to reduce the burden on release managers and to directly
+benefit from improvements in OpenSSL, Python should use a different
+approach. Instead of a positive list, the ssl module shall use
+OpenSSL's defaults combined with a block list of bad or irrelevant
+algorithms. This approach would also automatically enable new
+cipher suites such as ChaCha20-Poly1305 or TLS 1.3. OpenSSL has a
+domain specific language that makes the approach feasible because
+unknown or unsupported qualifiers are simply ignored. The new cipher
+suite configuration shall be::
 
    DEFAULT:!MD5:!3DES:!DES:!RC4:!IDEA:!SEED:!aDSS:!SRP:!PSK
 
 ``DEFAULT``
     is OpenSSL's default cipher list. It does not contain anonymous,
-    NULL encryption, and weak ciphers. Since OpenSSL 1.0.0 the list is in
-    sensible order.
+    NULL encryption, and weak ciphers. Since OpenSSL 1.0.0 the list
+    is in sensible order.
 ``!MD5``
     Omit ciphers with MD5 hash function. MD5 is broken.
 ``!3DES``, ``!DES``, ``RC4``, ``!IDEA``, ``!SEED``
-    Omit ciphers with TripleDES, standard DES, RC4, IDEA, or SEED encryption
-    algorithm. These algorithms have known weaknesses or are considered
-    obsolete.
+    Omit ciphers with TripleDES, standard DES, RC4, IDEA, or SEED
+    encryption algorithm. These algorithms have known
+    weaknesses or are considered obsolete.
 ``aDSS``
-    No authentication with DSA certificate. This refers to old discrete
-    logarithm DSA algorithm, not ECDSA over finite fields.
+    No authentication with DSA certificate. This refers to old
+    discrete logarithm DSA algorithm, not ECDSA over finite fields.
 ``!SRP``, ``!PSK``
-    Python's ssl module does neither support *Secure Remote Password* nor
-    *Pre-shared Key* authentication.
+    Python's ssl module does neither support *Secure Remote Password*
+    nor *Pre-shared Key* authentication.
 
 New features
 ============
@@ -226,127 +236,137 @@ Deprecations
 SSL 2.0 and 3.0
 ---------------
 
-SSL 2.0 and 3.0 are ancient versions with several known security issues. For
-many years it is highly recommended to avoid them. SSL 2.0 has been officially
-deprecated by RFC 6176 in 2011, SSL 3.0 was later deprecated by RFC 7568 in
-2015. Even legacy applications should support TLS 1.0 or better by now. After
-all TLS 1.0 is available since 1999.
+SSL 2.0 and 3.0 are ancient versions with several known security
+issues. For many years it is highly recommended to avoid them. SSL
+2.0 has been officially deprecated by RFC 6176 in 2011, SSL 3.0 was
+later deprecated by RFC 7568 in 2015. Even legacy applications
+should support TLS 1.0 or better by now. After all TLS 1.0 is
+available since 1999.
 
 Python's ssl module has disabled SSLv2 and SSLv3 support for
-``PROTOCOL_SSLv23`` / ``PROTOCOL_TLS`` in order to avoid downgrade attacks
-during handshake. Further more OpenSSL 1.1 no longer contains the functionality
-to establish a SSLv2 connection. It can be expected that SSLv3 support will be
-discontinued with OpenSSL 1.2.
+``PROTOCOL_SSLv23`` / ``PROTOCOL_TLS`` in order to avoid downgrade
+attacks during handshake. Further more OpenSSL 1.1 no longer
+contains the functionality to establish a SSLv2 connection. It can
+be expected that SSLv3 support will be discontinued with OpenSSL 1.2.
 
 Compression
 -----------
 
 TLS used to have the capability to compress its payload before it was
-encrypted. The feature deemed to be useful for transparent encryption of
-protocols that did not support compression itself. Later researchers have
-shown that TLS compression of HTTP can be abused by third-parties to infer and
-steal authentication cookies. Because of this vulnerability, TLS compression
-should no longer be used. The feature has been removed from TLS 1.3 all along.
-Since the attack was made public, Python's SSLContext comes with compression
+encrypted. The feature deemed to be useful for transparent encryption
+of protocols that did not support compression itself. Later
+researchers have shown that TLS compression of HTTP can be abused
+by third-parties to infer and steal authentication cookies. Because
+of this vulnerability, TLS compression should no longer be used.
+The feature has been removed from TLS 1.3 all along. Since the
+attack was made public, Python's SSLContext comes with compression
 disabled by default.
 
-Therefore ``SSLSocket.compression()`` no longer serves a purpose and can be
-removed without replacement.
+Therefore ``SSLSocket.compression()`` no longer serves a purpose and
+can be removed without replacement.
 
 HAS_* constants
 ---------------
 
-Without support for obsolete OpenSSL versions, ``HAS_ALPN``, ``HAS_ECDH``,
-``HAS_NPN``, and ``HAS_SNI`` are no longer useful. OpenSSL >= 1.0.2 always
-incorporates Application-Layer Protocol Negotiation, elliptic curve
-Diffie-Hellmann and server name indication. NPN support is deprecated.
+Without support for obsolete OpenSSL versions, ``HAS_ALPN``,
+``HAS_ECDH``,``HAS_NPN``, and ``HAS_SNI`` are no longer needed.
+OpenSSL >= 1.0.2 always incorporates Application-Layer Protocol
+Negotiation, elliptic curve Diffie-Hellmann and server name
+indication. NPN support is deprecated.
 
 PROTOCOL_* constants
 --------------------
 
-The ``PROTOCOL_*`` constants map directly to OpenSSL's ``SSL_METHOD *``, e.g.
-``PROTOCOL_TLS1_1`` creates a SSLContext with
-``SSL_CTX *ctx = SSL_CTX_new(TLSv1_1_method());``. OpenSSL 1.1 has deprecated
-all protocol-specific SSL methods in favor of the auto-negotiation method. It
-negotiates the highest available TLS protocol that is both supported and
-enabled on the client and on the server. In Python this method is available as
+The ``PROTOCOL_*`` constants map directly to OpenSSL's
+``SSL_METHOD *``, e.g. ``PROTOCOL_TLS1_1`` creates a SSLContext with
+``SSL_CTX *ctx = SSL_CTX_new(TLSv1_1_method());``. OpenSSL 1.1 has
+deprecated all protocol-specific SSL methods in favor of the
+auto-negotiation method. This method negotiates the highest available
+TLS protocol that is both supported and enabled on the client and
+on the server. In Python this method is available as
 ``PROTOCOL_SSLv23`` or under its new name ``PROTOCOL_TLS``.
 
-A SSLContext with ``PROTOCOL_TLS`` can create server and client sockets at the
-same time. This feature doesn't make sense. A client needs different settings
-than a server, e.g. a client must have peer verification and hostname checking
-enabled. A server never uses hostname verification and only enables
-``CERT_REQUIRED``, in case it wants to perform TLS client cert authentication.
+A SSLContext with ``PROTOCOL_TLS`` can create server and client
+sockets at the same time. This feature doesn't make sense. A client
+needs different settings than a server, e.g. a client must have
+peer verification and hostname checking enabled. A server never
+uses hostname verification and only enables ``CERT_REQUIRED``, in
+case it wants to perform TLS client cert authentication.
 
-In order to make the diverging requirements for server-side and client-side
-context explicit, all protocols but ``PROTOCOL_TLS_CLIENT`` and
-``PROTOCOL_TLS_SERVER`` are deprecated. This also allows us to drop more
-items: ```CLIENT_AUTH``, ``SERVER_AUTH``, and ``server_side`` parameter to
-``wrap_socket()`` and ``wrap_bio``. Further more a client-side SSLContext
+In order to make the diverging requirements for server-side and
+client-side context explicit, all protocols but
+``PROTOCOL_TLS_CLIENT`` and ``PROTOCOL_TLS_SERVER`` are deprecated.
+This also allows us to drop more items: ```CLIENT_AUTH``,
+``SERVER_AUTH``, and ``server_side`` parameter to ``wrap_socket()
+`` and ``wrap_bio``. Further more a client-side SSLContext
 can have different defaults than a server-side context.
-``ssl.SSLContext(PROTOCOL_TLS_CLIENT)`` will have cert validation and hostname
-checking enabled by default.
+``ssl.SSLContext(PROTOCOL_TLS_CLIENT)`` will have cert validation
+and hostname checking enabled by default.
 
 OP_NO_SSL* / OP_NO_TLS* constants
 ---------------------------------
 
 The constants ``OP_NO_SSLv2``, ``OP_NO_SSLv3``, ``OP_NO_TLSv1``,
-``OP_NO_TLSv1_1``, and ``OP_NO_TLSv1_2`` are used in conjunction with
-`` PROTOCOL_TLS`` (formerly known as ``PROTOCOL_SSLv23``). A ssl.SSLContext()
-with `` PROTOCOL_TLS`` uses auto-negotiation to find the highest TLS protocol
-that server and client can agree upon. For example ``OP_NO_TLSv1`` prevents
-negotiation of TLS 1.0.
+``OP_NO_TLSv1_1``, and ``OP_NO_TLSv1_2`` are used in conjunction
+with `` PROTOCOL_TLS`` (formerly known as ``PROTOCOL_SSLv23``). A
+ssl.SSLContext() with `` PROTOCOL_TLS`` uses auto-negotiation to
+find the highest TLS protocol that server and client can agree upon
+. For example ``OP_NO_TLSv1`` prevents negotiation of TLS 1.0.
 
-OpenSSL 1.1.0 has introduced a new API to set lowest and highest TLS/SSL
-protocol for a SSLContext (``SSL_CTX_set_min_proto_version()`` and
-``SSL_CTX_set_max_proto_version()``) and discourages the use of the
-``SSL_OP_NO_*`` arguments to ``SSL_CTX_set_option()``. Holes in the set of
-protocols were never supported, e.g. TLS 1.0 and 1.2 but not 1.1.
+OpenSSL 1.1.0 has introduced a new API to set lowest and highest
+TLS/SSL protocol for a SSLContext (``SSL_CTX_set_min_proto_version
+()`` and ``SSL_CTX_set_max_proto_version()``) and discourages the
+use of the ``SSL_OP_NO_*`` arguments to ``SSL_CTX_set_option()``.
+Holes in the set of protocols were never supported, e.g. TLS 1.0
+and 1.2 but not 1.1.
 
 Next Protocol Negotiation Extension (NPN)
 -----------------------------------------
 
-Originally the NPN TLS extension was introduced by Google for the SPDY
-protocol. The extension was never accepted by the TLS working group. Instead
-the competing Application-Layer Protocol Negotiation (ALPN) extension was
-adopted and later used in HTTP/2. No existing protocol uses NPN any more.
-Most browsers have deprecated and removed NPN support between 2014 and 2016.
+Originally the NPN TLS extension was introduced by Google for the
+SPDY protocol. The extension was never accepted by the TLS working
+group. Instead the competing Application-Layer Protocol Negotiation
+(ALPN) extension was adopted and later used in HTTP/2. No existing
+protocol uses NPN any more. Most browsers have deprecated and
+removed NPN support between 2014 and 2016.
 
 NPN support can be removed without risk for modern applications.
 
 SERVER_AUTH and CLIENT_AUTH purpose
 -----------------------------------
 
-The ``SERVER_AUTH`` and ``CLIENT_AUTH`` constants were introduced as flags for
-``ssl.create_default_context()``. With the introduction of
-``PROTOCOL_TLS_CLIENT`` and ``PROTOCOL_TLS_SERVER``, and deprecation of the
-remaining ``PROTOCOL_*`` constants, the flags no longer serve any purpose.
+The ``SERVER_AUTH`` and ``CLIENT_AUTH`` constants were introduced as
+flags for ``ssl.create_default_context()``. With introduction of
+``PROTOCOL_TLS_CLIENT`` and ``PROTOCOL_TLS_SERVER`` and deprecation
+of the remaining ``PROTOCOL_*`` constants, the purpose flags are
+replaced by ``PROTOCOL_TLS_CLIENT`` and ``PROTOCOL_TLS_SERVER``.
 
 ssl.wrap_socket()
 -----------------
 
-The function ``ssl.wrap_socket()`` is inefficient and takes way too many
-parameters. Developers should rather create and cache a SSLContext and use
-use ``SSLContext.wrap_socket()`` to wrap a socket.
+The function ``ssl.wrap_socket()`` is inefficient and takes way too
+many parameters. Developers should rather create and cache a
+SSLContext and use use ``SSLContext.wrap_socket()`` to wrap a socket.
 
 ssl.match_hostname()
 --------------------
 
 Hostname checking is handled by OpenSSL.
 
-Expose ``X509_check_host()`` and ``X509_check_ip_asc`` with X509 object?
+Expose ``X509_check_host()`` and ``X509_check_ip_asc`` with X509
+object?
 
 server_side parameter of SSLContext.wrap_socket()
 -------------------------------------------------
 
-The ``server_side`` flag can be inferred from the protocol of the SSLContext.
-``PROTOCOL_TLS_SERVER`` will ``server_side=True``.
+The ``server_side`` flag can be inferred from the protocol of the
+SSLContext. ``PROTOCOL_TLS_SERVER`` will ``server_side=True``.
 
 RAND_pseudo_bytes and EDG
 -------------------------
 
-``RAND_pseudo_bytes()`` and entropy gathering daemon support have been
-dropped from OpenSSL 1.1.
+``RAND_pseudo_bytes()`` and entropy gathering daemon support have
+been dropped from OpenSSL 1.1. 
 
 Backend libraries
 =================
