@@ -1,0 +1,690 @@
+PEP: 9999
+Title: Removing dead batteries from the standard library
+Author: Christian Heimes <christian@python.org>
+Status: Active
+Type: Process
+Content-Type: text/x-rst
+Created: 08-May-2019
+Post-History:
+
+
+Abstract
+========
+
+This PEP proposed a list of standard library modules to be removed from the
+standard library. The modules are mostly historic data formats and APIs that
+have been superseded a long time ago, e.g. Mac OS 9 and Commodore.
+
+Rationale
+=========
+
+Back in the early days of Python, the interpreter came with a large set of
+useful modules. This was often refrained to as "batteries included"
+philosophy and was one of the corner stones to Python's success story.
+Users didn't have to figure out how to download and install separate
+packages in order to write a simple web server or parse email.
+
+Times have changed. The introduction of the cheese shop (PyPI), setuptools,
+and later pip, it became simple and straight forward to download and install
+packages. Nowadays Python has a rich and vibrant ecosystem of third party
+packages. It's pretty much standard to either install packages from PyPI or
+use one of the many Python or Linux distributions.
+
+On the other hand, Python's standard library is piling up cruft, unnecessary
+duplication of functionality, and dispensable features. This is undesirable
+for several reasons.
+
+* Any additional module increases the maintenance cost for the Python core
+  development team. The team has limited resources, reduced maintenance cost
+  frees development time for other improvements.
+* Modules in the standard library are generally favored and seen as the
+  de-facto solution for a problem. A majority of users only pick 3rd party
+  modules to replace a stdlib module, when they have a compelling reason, e.g.
+  lxml instead of `xml`. The removal of an unmaintained stdlib module
+  increases the chances of a community contributed module to become widely
+  used.
+* A lean and mean standard library benefits platforms with limited resources
+  like devices with just a few hundred kilobyte of storage (e.g. BBC
+  Micro:bit). Python on mobile platforms like BeeWare or WebAssembly
+  (e.g. pyodide) also benefit from reduced download size.
+
+
+Deprecation schedule
+====================
+
+3.8
+---
+
+This PEP targets Python 3.8. Version 3.8.0 final is scheduled to be released
+a few months before Python 2.7 will reach its end of lifetime. We expect that
+Python 3.8 will be targeted by users that migrate to Python 3 in 2019 and
+2020. To reduce churn and to allow a smooth transition from Python 2,
+Python 3.8 will neither raise `DeprecationWarning` nor remove any
+modules that have been scheduled for removal. Instead deprecated modules will
+just be *documented* as deprecated. Optionally modules may emit a
+`PendingDeprecationWarning`.
+
+All deprecated modules will also undergo a feature freeze. No additional
+features should be added. Bug should still be fixed.
+
+3.9
+---
+
+Starting with Python 3.9, deprecated modules will start issuing
+`DeprecationWarning`.
+
+3.10
+----
+
+In 3.10, all deprecated modules will be removed from the CPython repository
+together with tests, documentation, and autoconf rules.
+
+
+Deprecated modules
+==================
+
+The modules are grouped as data encoding, multimedia, network, OS interface,
+and misc modules. The majority of modules are for old data formats or
+old APIs. Some others are rarely useful and have better replacements on
+PyPI, e.g. Pillow for image processing or NumPy-based projects to deal with
+audio processing.
+
+Data encoding modules
+---------------------
+
+binhex
+~~~~~~
+
+The `binhex <https://docs.python.org/3/library/binhex.html>`_ module encodes
+and decodes Apple Macintosh binhex4 data. It was originally developed for
+TSR-80. In the 1980s and early 1990s it was used on classic Mac OS 9 to
+encode binary email attachments.
+
+Module type
+  pure Python
+Deprecated in
+  3.8
+To be removed in
+  3.10
+Substitute
+  *n/a*
+
+uu
+~~
+
+The `uu <https://docs.python.org/3/library/uu.html>`_ module provides
+uuencode format, an old binary encoding format for email from 1980. The uu
+format has been replaced by MIME. The uu codec is provided by the binascii
+module.
+
+Module type
+  pure Python
+Deprecated in
+  3.8
+To be removed in
+  3.10
+Substitute
+  *n/a*
+
+xdrlib
+~~~~~~
+
+The `xdrlib <https://docs.python.org/3/library/xdrlib.html>`_ module supports
+the Sun External Data Representation Standard. XDR is an old binary
+serialization format from 1987. These days it's rarely used outside
+specialized domains like NFS.
+
+Module type
+  pure Python
+Deprecated in
+  3.8
+To be removed in
+  3.10
+Substitute
+  *n/a*
+
+
+Multimedia modules
+------------------
+
+aifc
+~~~~
+
+The `aifc <https://docs.python.org/3/library/aifc.html>`_ module provides
+support for reading and writing AIFF and AIFF-C files. The Audio Interchange
+File Format is an old audio format from 1988 based on Amiga IFF. It was most
+commonly used on the Apple Macintosh. These days only few specialized
+application use AIFF.
+
+Module type
+  pure Python (depends on `audioop`_ C extension)
+Deprecated in
+  3.8
+To be removed in
+  3.10
+Substitute
+  *n/a*
+
+audioop
+~~~~~~~
+
+The `audioop <https://docs.python.org/3/library/audioop.html>`_ module
+contains helper functions to manipulate raw audio data and adaptive
+differential pulse-code modulated audio data. The module is implemented in
+C without any additional dependencies.
+
+Module type
+  C extension
+Deprecated in
+  3.8
+To be removed in
+  3.10
+Substitute
+  *n/a*
+
+colorsys
+~~~~~~~~
+
+The `colorsys <https://docs.python.org/3/library/colorsys.html>`_ module
+defines color conversion functions between RGB, YIQ, HSL, and HSV coordinate
+systems. The Pillow library provides much faster conversation between
+color systems.
+
+Module type
+  pure Python
+Deprecated in
+  3.8
+To be removed in
+  3.10
+Substitute
+  *n/a*
+
+chunk
+~~~~~
+
+The `chunk <https://docs.python.org/3/library/chunk.html>`_ module provides
+support for reading and writing Electronic Arts' Interchange File Format.
+IFF is an old audio file format originally introduced for Commodore and
+Amiga. The format is no longer relevant.
+
+Module type
+  pure Python
+Deprecated in
+  3.8
+To be removed in
+  3.10
+Substitute
+  *n/a*
+
+imghdr
+~~~~~~
+
+The `imghdr <https://docs.python.org/3/library/imghdr.html>`_ module is a
+simple tool to guess the image file format from the first 32 bytes
+of a file or buffer. It supports only a limited amount of formats and
+neither returns resolution nor color depth.
+
+Module type
+  pure Python
+Deprecated in
+  3.8
+To be removed in
+  3.10
+Substitute
+  *n/a*
+
+ossaudiodev
+~~~~~~~~~~~
+
+The `ossaudiodev <https://docs.python.org/3/library/ossaudiodev.html>`_
+module provides support for Open Sound System, an interface to sound
+playback and capture devices. OSS was initially free software, but later
+support for newer sound devices and improvements were proprietary. Linux
+community abandoned OSS in favor of ALSA [1]_. Some operation systems like
+OpenBSD and NetBSD provide an incomplete [2]_ emulation of OSS.
+
+Module type
+  C extension
+Deprecated in
+  3.8
+To be removed in
+  3.10
+Substitute
+  *n/a*
+
+sndhdr
+~~~~~~
+
+The `sndhdr <https://docs.python.org/3/library/sndhdr.html>`_ module is
+similar to the `imghdr`_ module but for audio formats. It guesses file
+format, channels, frame rate, and sample widths from the first 512 bytes of
+a file or buffer. The module only supports AU, AIFF, HCOM, VOC, WAV, and
+other ancient formats.
+
+Module type
+  pure Python (depends on `audioop`_ C extension for some operations)
+Deprecated in
+  3.8
+To be removed in
+  3.10
+Substitute
+  *n/a*
+
+sunau
+~~~~~
+
+The `sunau <https://docs.python.org/3/library/sunhdr.html>`_ module provides
+support for Sun AU sound format. It's yet another old, obsolete file format.
+
+Module type
+  pure Python (depends on `audioop`_ C extension for some operations)
+Deprecated in
+  3.8
+To be removed in
+  3.10
+Substitute
+  *n/a*
+
+wave
+~~~~
+
+The `wave <https://docs.python.org/3/library/wave.html>`_ module provides
+support for the WAV sound format. The WAV format has been largely superseded
+by better codes that support lossless audio compression, e.g. FLAC.
+
+The *wave* module one of the three modules besides `aifc`_ and `sunau`_,
+that depend on `audioop`_. With deprecation of the other multimedia formats,
+it would be the last multimedia module.
+
+Module type
+  pure Python (depends on `audioop`_ C extension)
+Deprecated in
+  3.8
+To be removed in
+  3.10
+Substitute
+  *n/a*
+
+
+Networking modules
+------------------
+
+asynchat
+~~~~~~~~
+
+The `asynchat <https://docs.python.org/3/library/asynchat.html>`_ module
+is build on top of `asyncore`_ and has been deprecated since Python 3.6.
+
+Module type
+  pure Python
+Deprecated in
+  3.6
+Removed in
+  3.10
+Substitute
+  asyncio
+
+asyncore
+~~~~~~~~
+
+The `asyncore <https://docs.python.org/3/library/asyncore.html>`_ module was
+the first module for asynchronous socket service clients and servers. It
+has been replaced by asyncio and is deprecated since Python 3.6.
+
+Module type
+  pure Python
+Deprecated in
+  3.6
+Removed in
+  3.10
+Substitute
+  asyncio
+
+
+cgi
+~~~
+
+The `cgi <https://docs.python.org/3/library/cgi.html>`_ module is a support
+module for Common Gateway Interface (CGI) scripts. CGI is deemed as
+inefficient because every incoming request is handled in a new process. PEP
+206 considers the module as *designed poorly and are now near-impossible
+to fix*.
+
+Several people proposed to either keep the cgi module for features like
+`cgi.parse_qs()` or move `cgi.escape()` to a different module. The
+functions `cgi.parse_qs` and `cgi.parse_qsl` have been
+deprecated for a while and are actually aliases for
+`urllib.parse.parse_qs` and `urllib.parse.parse_qsl`. The
+function `cgi.quote` has been deprecated in favor of `html.quote`
+with secure default values.
+
+
+Module type
+  pure Python
+Deprecated in
+  3.8
+To be removed in
+  3.10
+Substitute
+  *n/a*
+
+
+cgitb
+~~~~~
+
+The `cgitb <https://docs.python.org/3/library/cgitb.html>`_ module is a
+helper for the cgi module for configurable tracebacks.
+
+Module type
+  pure Python
+Deprecated in
+  *n/a*
+Removed in
+  *n/a*
+Substitute
+  *n/a*
+
+Operating system interface
+--------------------------
+
+crypt
+~~~~~
+
+The `crypt <https://docs.python.org/3/library/crypt.html>`_ module implements
+password hashing based on ``crypt(3)`` function from ``libcrypt`` or
+``libxcrypt`` on Unix-like platform. The algorithms are mostly old, of poor
+quality and insecure. Users are discouraged to use them.
+
+Module type
+  C extension + Python module
+Deprecated in
+  *n/a*
+Removed in
+  *n/a*
+Substitute
+  passlib (3rd party package)
+
+macpath
+~~~~~~~
+
+The `macpath <https://docs.python.org/3/library/macpath.html>`_ module
+provides Mac OS 9 implementation of os.path routines. Mac OS 9 is no longer
+supported
+
+Module type
+  pure Python
+Deprecated in
+  3.7
+Removed in
+  3.8
+Substitute
+  **none**
+
+nis
+~~~
+
+The `nis <https://docs.python.org/3/library/nis.html>`_ module provides
+NIS/YP support. Network Information Service / Yellow Pages is an old and
+deprecated directory service protocol developed by Sun Microsystems. It's
+designed successor NIS+ from 1992 never took off. For a long time, libc's
+Name Service Switch, LDAP, and Kerberos/GSSAPI are considered a more powerful
+and more secure replacement of NIS.
+
+Module type
+  C extension
+Deprecated in
+  3.8
+To be removed in
+  3.10
+Substitute
+  **none**
+
+spwd
+~~~~
+
+The `spwd <https://docs.python.org/3/library/spwd.html>`_ module provides
+direct access to Unix shadow password database using non-standard APIs.
+In general it's a bad idea to use the spwd. The spwd circumvents system
+security policies, it does not use the PAM stack, and is
+only compatible with local user accounts.
+
+Module type
+  C extension
+Deprecated in
+  3.8
+To be removed in
+  3.10
+Substitute
+  **none**
+
+Misc modules
+------------
+
+fileinput
+~~~~~~~~~
+
+The `fileinput <https://docs.python.org/3/library/fileinput.html>`_ module
+implements a helpers to iterate over a list of files from ``sys.argv``. The
+module predates the optparser and argparser module. The same functionality
+can be implemented with the argparser module.
+
+Module type
+  pure Python
+Deprecated in
+  3.8
+To be removed in
+  3.10
+Substitute
+  *n/a*
+
+formatter
+~~~~~~~~~
+
+The `formatter <https://docs.python.org/3/library/formatter.html>`_ module
+is an old text formatting module which has been deprecated since Python 3.4.
+
+Module type
+  pure Python
+Deprecated in
+  3.4
+To be removed in
+  3.10
+Substitute
+  *n/a*
+
+imp
+~~~
+
+The `imp <https://docs.python.org/3/library/imp.html>`_ module is the
+predecessor of the
+`importlib <https://docs.python.org/3/library/importlib.html>`_ module. Most
+functions have been deprecated since Python 3.3 and the module since
+Python 3.4.
+
+Module type
+  C extension
+Deprecated in
+  3.4
+To be removed in
+  3.10
+Substitute
+  importlib
+
+msilib
+~~~~~~
+
+The `msilib <https://docs.python.org/3/library/msilib.html>`_ package is a
+Windows-only package. It supports the creation of Microsoft Installers (MSI).
+The package also exposes additional APIs to create cabinet files (CAB). The
+module is used to facilitate distutils to create MSI installers with
+``bdist_msi`` command. In the past it was used to create CPython's official
+Windows installer, too.
+
+Microsoft is slowly moving away from MSI in favor of Windows 10 Apps (AppX)
+as new deployment model [3]_.
+
+Module type
+  C extension + Python code
+Deprecated in
+  3.8
+To be removed in
+  3.10
+Substitute
+  *n/a*
+
+pipes
+~~~~~
+
+The `pipes <https://docs.python.org/3/library/pipes.html>`_ module provides
+helpers to pipe the input of one command into the output of another command.
+The module is built on top of ``os.popen``. Users are encouraged to use
+the subprocess module instead.
+
+Module type
+  pure Python
+Deprecated in
+  3.8
+To be removed in
+  3.10
+Substitute
+  subprocess module
+
+Removed modules
+===============
+
+fpectl
+------
+
+The `fpectl <https://docs.python.org/3.6/library/fpectl.html>`_ module was
+never built by default, its usage was discouraged and considered dangerous.
+It also required a configure flag that caused an ABI incompatibility. The
+module was removed in 3.7 by Nathaniel J. Smith in
+`bpo-29137 <https://bugs.python.org/issue29137>`_.
+
+Module type
+  C extension + CAPI
+Deprecated in
+  3.7
+Removed in
+  3.7
+Substitute
+  **none**
+
+
+Modules to keep
+===============
+
+Some modules were originally proposed for deprecation.
+
+lib2to3
+-------
+
+The `lib2to3 <https://docs.python.org/3/library/2to3.html>`_ package provides
+the ``2to3`` command to transpile Python 2 code to Python 3 code.
+
+The package is useful for other tasks besides porting code from Python 2 to
+3. For example `black`_ uses it for code reformatting.
+
+Module type
+  pure Python
+
+getopt
+------
+
+The `getopt <https://docs.python.org/3/library/getopt.html>`_ module mimics
+C's getopt() option parser. Although users are encouraged to use argparse
+instead, the getopt module is still widely used.
+
+Module type
+  pure Python
+
+optparse
+--------
+
+The `optparse <https://docs.python.org/3/library/optparse.html>`_ module is
+the predecessor of the argparse module. Although it has been deprecated for
+many years, it's still widely used.
+
+Module type
+  pure Python
+Deprecated in
+  3.2
+Substitute
+  argparse
+
+
+Future maintenance of removed modules
+=====================================
+
+The main goal of the PEP is to reduce the burden and workload on the Python
+core developer team. Therefore removed modules will not be maintained by
+the core team as separate PyPI packages. However the removed code, tests and
+documentation may be moved into a new git repository. The idea is to have
+a place from which community members can pick up and fork code.
+
+Most of the modules are in pure Python and can be easily packaged. Some
+depend on a simple C module, e.g. `audioop`_ and `crypt`_. Since `audioop`_
+does not depend on any external libraries, it can be shipped in as binary
+wheels with some effort. Other C modules can be replaced with ctypes or cffi.
+For example I created `legacycrypt <https://github.com/tiran/legacycrypt>`_
+with ``_crypt`` extension reimplemented with a few lines of ctypes code.
+
+
+PEP acceptance process
+======================
+
+3.8.0b1 is scheduled to be release shortly after the PEP is officially
+submitted. Since it's improbable that the PEP will pass all stages of the
+PEP process in time, I propose a two step acceptance process that is
+analogous Python's two release deprecation process.
+
+The first *provisionally accepted* phase targets Python 3.8.0b1. In the first
+phase no code is changes or removed. Modules are only documented as
+deprecated. The final decision can be delayed for another year.
+
+
+Discussions
+===========
+
+* Elana Hashman and Nick Coghlan suggested to keep the *getopt* module.
+* Berker Peksag proposed to deprecate and removed *msilib*.
+* Brett Cannon recommended to delay active deprecation warnings and removal
+  of modules like *imp* until Python 3.10. Version 3.8 will be released
+  shortly before Python 2 reaches end of lifetime. A delay reduced churn for
+  users that migrate from Python 2 to 3.8.
+* Brett also came up with the idea to keep lib2to3. The package is useful
+  for other purposes, e.g. `black <https://pypi.org/project/black/>`_ uses
+  it to reformat Python code.
+* At one point, distutils was mentioned in the same sentence as this PEP.
+  To avoid lengthy discussion and delay of the PEP, I decided against dealing
+  with distutils. Deprecation of the distutils package will be handled by
+  another PEP.
+
+
+Resources
+=========
+
+
+References
+==========
+
+.. [1] https://en.wikipedia.org/wiki/Open_Sound_System#Free,_proprietary,_free
+.. [2] https://man.openbsd.org/ossaudio
+.. [3] https://blogs.msmvps.com/installsite/blog/2015/05/03/the-future-of-windows-installer-msi-in-the-light-of-windows-10-and-the-universal-windows-platform/
+
+
+Copyright
+=========
+
+This document has been placed in the public domain.
+
+
+
+..
+   Local Variables:
+   mode: indented-text
+   indent-tabs-mode: nil
+   sentence-end-double-space: t
+   fill-column: 70
+   coding: utf-8
+   End:
