@@ -76,7 +76,7 @@ Starting with Python 3.9, deprecated modules will start issuing
 3.10
 ----
 
-In 3.10, all deprecated modules will be removed from the CPython repository
+In 3.10 all deprecated modules will be removed from the CPython repository
 together with tests, documentation, and autoconf rules.
 
 
@@ -88,6 +88,42 @@ and misc modules. The majority of modules are for old data formats or
 old APIs. Some others are rarely useful and have better replacements on
 PyPI, e.g. Pillow for image processing or NumPy-based projects to deal with
 audio processing.
+
+.. csv-table:: Table 1: Proposed modules deprecations
+   :header: "Module", "Deprecated in", "To be removed", "Replacement"
+
+    aifc,3.8,3.10,\-
+    asynchat,3.8,3.10,asyncio
+    asyncore,3.8,3.10,asyncio
+    audioop,3.8,3.10,\-
+    binhex,3.8,3.10,\-
+    cgi,3.8,3.10,\-
+    cgitb,3.8,3.10,\-
+    chunk,3.8,3.10,\-
+    colorsys,**3.8?**,**3.10?**,\-
+    crypt,3.8,3.10,\-
+    fileinput,3.8,3.10,argparse
+    formatter,3.4,3.10,\-
+    fpectl,**3.7**,**3.7**,\-
+    getopt,**3.2**,**keep**,"argparse, optparse"
+    imghdr,3.8,3.10,\-
+    imp,**3.4**,3.10,importlib
+    lib2to3,\-,**keep**,
+    macpath,**3.7**,**3.8**,\-
+    msilib,3.8,3.10,\-
+    nntplib,3.8,3.10,\-
+    nis,3.8,3.10,\-
+    optparse,\-,**keep**,argparse
+    ossaudiodev,3.8,3.10,\-
+    pipes,3.8,3.10,subprocess
+    smtpd,**3.7**,3.10,aiosmtpd
+    sndhdr,3.8,3.10,\-
+    spwd,3.8,3.10,\-
+    sunau,3.8,3.10,\-
+    uu,3.8,3.10,\-
+    wave,\-,**keep**,
+    xdrlib,3.8,3.10,\-
+
 
 Data encoding modules
 ---------------------
@@ -107,7 +143,7 @@ Deprecated in
 To be removed in
   3.10
 Substitute
-  *n/a*
+  **none**
 
 uu
 ~~
@@ -124,7 +160,7 @@ Deprecated in
 To be removed in
   3.10
 Substitute
-  *n/a*
+  **none**
 
 xdrlib
 ~~~~~~
@@ -141,7 +177,7 @@ Deprecated in
 To be removed in
   3.10
 Substitute
-  *n/a*
+  **none**
 
 
 Multimedia modules
@@ -163,7 +199,7 @@ Deprecated in
 To be removed in
   3.10
 Substitute
-  *n/a*
+  **none**
 
 audioop
 ~~~~~~~
@@ -171,7 +207,8 @@ audioop
 The `audioop <https://docs.python.org/3/library/audioop.html>`_ module
 contains helper functions to manipulate raw audio data and adaptive
 differential pulse-code modulated audio data. The module is implemented in
-C without any additional dependencies.
+C without any additional dependencies. The `aifc`_, `sunau`_, and `wave`_
+module depend on `audioop`_ for some operations.
 
 Module type
   C extension
@@ -180,7 +217,7 @@ Deprecated in
 To be removed in
   3.10
 Substitute
-  *n/a*
+  **none**
 
 colorsys
 ~~~~~~~~
@@ -197,7 +234,7 @@ Deprecated in
 To be removed in
   3.10
 Substitute
-  *n/a*
+  ``Pillow``
 
 chunk
 ~~~~~
@@ -214,7 +251,7 @@ Deprecated in
 To be removed in
   3.10
 Substitute
-  *n/a*
+  **none**
 
 imghdr
 ~~~~~~
@@ -250,7 +287,7 @@ Deprecated in
 To be removed in
   3.10
 Substitute
-  *n/a*
+  **none**
 
 sndhdr
 ~~~~~~
@@ -283,27 +320,7 @@ Deprecated in
 To be removed in
   3.10
 Substitute
-  *n/a*
-
-wave
-~~~~
-
-The `wave <https://docs.python.org/3/library/wave.html>`_ module provides
-support for the WAV sound format. The WAV format has been largely superseded
-by better codes that support lossless audio compression, e.g. FLAC.
-
-The *wave* module one of the three modules besides `aifc`_ and `sunau`_,
-that depend on `audioop`_. With deprecation of the other multimedia formats,
-it would be the last multimedia module.
-
-Module type
-  pure Python (depends on `audioop`_ C extension)
-Deprecated in
-  3.8
-To be removed in
-  3.10
-Substitute
-  *n/a*
+  **none**
 
 
 Networking modules
@@ -330,6 +347,11 @@ asyncore
 The `asyncore <https://docs.python.org/3/library/asyncore.html>`_ module was
 the first module for asynchronous socket service clients and servers. It
 has been replaced by asyncio and is deprecated since Python 3.6.
+
+The ``asyncore`` module is also used in stdlib tests. The tests for
+``ftplib``, ``logging``, ``smptd``, ``smtplib``, and ``ssl`` are partly
+based on ``asyncore``. These tests must be updated to use asyncio or
+threading.
 
 Module type
   pure Python
@@ -358,7 +380,6 @@ deprecated for a while and are actually aliases for
 function `cgi.quote` has been deprecated in favor of `html.quote`
 with secure default values.
 
-
 Module type
   pure Python
 Deprecated in
@@ -366,7 +387,7 @@ Deprecated in
 To be removed in
   3.10
 Substitute
-  *n/a*
+  **none**
 
 
 cgitb
@@ -378,11 +399,50 @@ helper for the cgi module for configurable tracebacks.
 Module type
   pure Python
 Deprecated in
-  *n/a*
-Removed in
-  *n/a*
+  3.8
+To be removed in
+  3.10
 Substitute
-  *n/a*
+  **none**
+
+smtpd
+~~~~~
+
+The `smtpd <https://docs.python.org/3/library/smtpd.html>`_ module provides
+a simple implementation of a SMTP mail server. The module documentation
+recommends ``aiosmtpd``.
+
+Module type
+  pure Python
+Deprecated in
+  **3.7**
+To be removed in
+  3.10
+Substitute
+  aiosmtpd
+
+nntplib
+~~~~~~~
+
+The `nntplib <https://docs.python.org/3/library/nntplib.html>`_ module
+implements the client side of the Network News Transfer Protocol (nntp). News
+groups used to be a dominant platform for online discussions. Over the last
+two decades, news has been slowly but steadily replaced with mailing lists
+and web-based discussion platforms.
+
+The ``nntplib`` tests have been the cause of additional work in the recent
+past. Python only contains client side of NNTP. The test cases depend on
+external news server. These servers were unstable in the past.
+
+Module type
+  pure Python
+Deprecated in
+  3.8
+To be removed in
+  3.10
+Substitute
+  **none**
+
 
 Operating system interface
 --------------------------
@@ -398,9 +458,9 @@ quality and insecure. Users are discouraged to use them.
 Module type
   C extension + Python module
 Deprecated in
-  *n/a*
-Removed in
-  *n/a*
+  3.8
+To be removed in
+  3.10
 Substitute
   passlib (3rd party package)
 
@@ -475,7 +535,7 @@ Deprecated in
 To be removed in
   3.10
 Substitute
-  *n/a*
+  argparse
 
 formatter
 ~~~~~~~~~
@@ -530,7 +590,7 @@ Deprecated in
 To be removed in
   3.10
 Substitute
-  *n/a*
+  **none**
 
 pipes
 ~~~~~
@@ -612,6 +672,27 @@ Deprecated in
 Substitute
   argparse
 
+wave
+~~~~
+
+The `wave <https://docs.python.org/3/library/wave.html>`_ module provides
+support for the WAV sound format. The module uses one simple function
+from the `audioop`_ module to perform byte swapping between little and big
+endian formats. Before 24 bit WAV support was added, byte swap used to be
+implemented with the ``array`` module. To remove ``wave``'s dependency on the
+``audioop``, the byte swap function could be either be moved to another
+module (e.g. ``operator``) or the ``array`` module could gain support for
+24 bit (3 byte) arrays.
+
+Module type
+  pure Python (depends on *byteswap* from `audioop`_ C extension)
+Deprecated in
+  3.8
+To be removed in
+  3.10
+Substitute
+  *n/a*
+
 
 Future maintenance of removed modules
 =====================================
@@ -619,8 +700,14 @@ Future maintenance of removed modules
 The main goal of the PEP is to reduce the burden and workload on the Python
 core developer team. Therefore removed modules will not be maintained by
 the core team as separate PyPI packages. However the removed code, tests and
-documentation may be moved into a new git repository. The idea is to have
-a place from which community members can pick up and fork code.
+documentation may be moved into a new git repository, so community members
+have a place from which they can pick up and fork code.
+
+It's my hope that some of the deprecated modules will be picked up and
+adopted by users that actually care about them. For example ``colorsys`` and
+``imghdr`` are useful modules, but have limited feature set. A fork of
+``imghdr`` can add new features and support for more image formats, without
+being constrained by Python's release cycle.
 
 Most of the modules are in pure Python and can be easily packaged. Some
 depend on a simple C module, e.g. `audioop`_ and `crypt`_. Since `audioop`_
@@ -659,6 +746,9 @@ Discussions
   To avoid lengthy discussion and delay of the PEP, I decided against dealing
   with distutils. Deprecation of the distutils package will be handled by
   another PEP.
+* Multiple people (Gregory P. Smith, David Beazley, Nick Coghlan, ...)
+  convinced me to keep the `wave`_ module.
+* Gregory P. Smith proposed to deprecate `nntplib`_.
 
 
 Resources
