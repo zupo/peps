@@ -20,13 +20,13 @@ Rationale
 
 Back in the early days of Python, the interpreter came with a large set of
 useful modules. This was often refrained to as "batteries included"
-philosophy and was one of the corner stones to Python's success story.
+philosophy and was one of the cornerstones to Python's success story.
 Users didn't have to figure out how to download and install separate
 packages in order to write a simple web server or parse email.
 
 Times have changed. The introduction of the cheese shop (PyPI), setuptools,
 and later pip, it became simple and straight forward to download and install
-packages. Nowadays Python has a rich and vibrant ecosystem of third party
+packages. Nowadays Python has a rich and vibrant ecosystem of third-party
 packages. It's pretty much standard to either install packages from PyPI or
 use one of the many Python or Linux distributions.
 
@@ -44,7 +44,7 @@ for several reasons.
   increases the chances of a community contributed module to become widely
   used.
 * A lean and mean standard library benefits platforms with limited resources
-  like devices with just a few hundred kilobyte of storage (e.g. BBC
+  like devices with just a few hundred kilobytes of storage (e.g. BBC
   Micro:bit). Python on mobile platforms like BeeWare or WebAssembly
   (e.g. pyodide) also benefit from reduced download size.
 
@@ -65,7 +65,7 @@ just be *documented* as deprecated. Optionally modules may emit a
 `PendingDeprecationWarning`.
 
 All deprecated modules will also undergo a feature freeze. No additional
-features should be added. Bug should still be fixed.
+features should be added. Bugs should still be fixed.
 
 3.9
 ---
@@ -133,7 +133,7 @@ binhex
 
 The `binhex <https://docs.python.org/3/library/binhex.html>`_ module encodes
 and decodes Apple Macintosh binhex4 data. It was originally developed for
-TSR-80. In the 1980s and early 1990s it was used on classic Mac OS 9 to
+TSR-80. In the 1980s and early 1990s, it was used on classic Mac OS 9 to
 encode binary email attachments.
 
 Module type
@@ -189,7 +189,7 @@ aifc
 The `aifc <https://docs.python.org/3/library/aifc.html>`_ module provides
 support for reading and writing AIFF and AIFF-C files. The Audio Interchange
 File Format is an old audio format from 1988 based on Amiga IFF. It was most
-commonly used on the Apple Macintosh. These days only few specialized
+commonly used on the Apple Macintosh. These days only a few specialized
 application use AIFF.
 
 Module type
@@ -504,7 +504,7 @@ spwd
 
 The `spwd <https://docs.python.org/3/library/spwd.html>`_ module provides
 direct access to Unix shadow password database using non-standard APIs.
-In general it's a bad idea to use the spwd. The spwd circumvents system
+In general, it's a bad idea to use the spwd. The spwd circumvents system
 security policies, it does not use the PAM stack, and is
 only compatible with local user accounts.
 
@@ -577,7 +577,7 @@ The `msilib <https://docs.python.org/3/library/msilib.html>`_ package is a
 Windows-only package. It supports the creation of Microsoft Installers (MSI).
 The package also exposes additional APIs to create cabinet files (CAB). The
 module is used to facilitate distutils to create MSI installers with
-``bdist_msi`` command. In the past it was used to create CPython's official
+``bdist_msi`` command. In the past, it was used to create CPython's official
 Windows installer, too.
 
 Microsoft is slowly moving away from MSI in favor of Windows 10 Apps (AppX)
@@ -720,13 +720,13 @@ with ``_crypt`` extension reimplemented with a few lines of ctypes code.
 PEP acceptance process
 ======================
 
-3.8.0b1 is scheduled to be release shortly after the PEP is officially
+3.8.0b1 is scheduled to be released shortly after the PEP is officially
 submitted. Since it's improbable that the PEP will pass all stages of the
 PEP process in time, I propose a two step acceptance process that is
 analogous Python's two release deprecation process.
 
 The first *provisionally accepted* phase targets Python 3.8.0b1. In the first
-phase no code is changes or removed. Modules are only documented as
+phase, no code is changed or removed. Modules are only documented as
 deprecated. The final decision can be delayed for another year.
 
 
